@@ -4,8 +4,6 @@ from time import sleep
 import paramiko
 import termcolor as T
 
-PI_MODULE = '/root/vimal/10g/perfiso_10g_linux/perfiso.ko'
-PI_DEV = 'eth2'
 default_dir='/tmp'
 SSH_PREFIX = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no "
 

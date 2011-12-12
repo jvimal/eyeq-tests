@@ -7,6 +7,7 @@ import termcolor as T
 from expt import Expt
 from iperf import Iperf
 from time import sleep
+from host import *
 
 sys.path = ['/root/vimal/10g/perfiso_10g_linux/tools'] + sys.path
 import perfiso
@@ -30,6 +31,13 @@ parser.add_argument('-n',
                     type=int,
                     help="Number of rate limiters.",
                     default=1)
+
+parser.add_argument('-P',
+                    dest="parallel",
+                    action="store",
+                    type=int,
+                    help="Number of parallel connections per pair.",
+                    default=4)
 
 parser.add_argument('-t',
                     dest="t",
@@ -72,34 +80,33 @@ class TxOverhead(Expt):
             cmd(c)
 
     def start(self):
-        unload_module()
+        h1 = Host("192.168.1.1")
+        h2 = Host("192.168.1.2")
+        hlist = HostList(h1, h2)
+        hlist.rmmod()
         remove_qdiscs()
         n = self.opts('n')
 
         if self.opts('rl') == "perfiso":
-            load_module()
-            self.log("Loaded module")
-            perfiso.params.set("ISO_MAX_TX_RATE", self.opts('rate'))
-            perfiso.params.set("ISO_RFAIR_INITIAL", self.opts('rate'))
-            perfiso.params.set("ISO_TOKENBUCKET_TIMEOUT_NS", self.opts('timeout'))
-            # Create tx class
-            self.log("Creating tx classes")
+            h1.insmod()
+            h1.perfiso_set("ISO_MAX_TX_RATE", self.opts('rate'))
+            h1.perfiso_set("ISO_MAX_TX_RATE", self.opts('rate'))
+            h1.perfiso_set("ISO_RFAIR_INITIAL", self.opts('rate'))
+            h1.perfiso_set("ISO_TOKENBUCKET_TIMEOUT_NS", self.opts('timeout'))
             for i in xrange(n):
-                perfiso.txc.create(i + 1)
-            sleep(0.1)
+                h1.perfiso_create_txc(i+1)
         else:
             self.configure_qdisc()
 
         # Filter traffic to dest iperf port 5001+i to skb mark i+1
-        cmd_host("192.168.1.2", "killall -9 iperf")
-        cmd("iptables -F")
+        hlist.cmd("killall -9 iperf; iptables -F")
         self.log("Adding iptables classifiers")
 
         for i in xrange(n):
             klass = i+1
             c = "iptables -A OUTPUT --dst 192.168.2.2"
             c += " -p tcp --dport %d -j MARK --set-mark %d" % (5000 + klass, klass)
-            cmd(c)
+            h1.cmd(c)
 
         self.log("Starting CPU/bandwidth monitors")
         # Start monitors
@@ -113,10 +120,10 @@ class TxOverhead(Expt):
 
         self.log("Starting %d iperfs" % n)
         # Start iperfs servers
+        parallel = self.opts("P")
         for i in xrange(n):
             klass = i+1
             port = 5000 + klass
-            parallel = 4
             iperf = Iperf({'-p': port,
                            '-P': parallel,
                            '-c': '192.168.2.2'})
@@ -136,7 +143,6 @@ class TxOverhead(Expt):
             client = iperf.start_client('192.168.2.1')
             self.procs.append(client)
             self.log("client %d" % klass)
-            sleep(0.1)
 
     def stop(self):
         for p in self.procs:
@@ -150,4 +156,5 @@ TxOverhead({
         't': args.t,
         'rl': args.rl,
         'timeout': args.timeout,
+        'P': args.parallel,
         }).run()
