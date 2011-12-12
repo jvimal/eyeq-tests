@@ -218,7 +218,7 @@ class RxOverhead2(Expt):
             c += " -j MARK --set-mark %d" % klass
             cmd(c)
 
-        for i in xrange(n):
+        for i in xrange(1):
             klass = i+1
             c = "ebtables -t broute -A BROUTING -p ip --ip-proto tcp "
             c += " --in-if %s" % (dev)
