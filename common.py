@@ -29,20 +29,19 @@ def cmd_host(host, c):
     #return Popen(ssh, shell=True).wait()
     print T.colored(host + ":", "magenta"), T.colored(c, "grey", attrs=["bold"])
     out = ssh.exec_command(c)[1].read()
-    ssh.close()
     return out
 
 def cmd_host_async(host, c):
-    ssh = SSH_PREFIX + " %s \"%s\" > /dev/null 2>&1" % (host, c)
-    return Popen(ssh, shell=True)
+    #ssh = SSH_PREFIX + " %s \"%s\" > /dev/null 2>&1" % (host, c)
+    #return Popen(ssh, shell=True)
     ssh = sshs.get(host, None)
     if ssh is None:
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(host, username="root")
         sshs[host] = ssh
-    ssh.exec_command(host)
-    return ssh
+    out = ssh.exec_command(c)
+    return out
 
 def unload_module():
     cmd("rmmod perfiso")
