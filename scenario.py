@@ -65,10 +65,12 @@ class Scenarios:
 
 from test_tcp2vs32 import Tcp2Vs32
 from test_tcpvsudp import TcpVsUdp
+from test_udp import Udp
 
 scen = Scenarios()
 scen.add("tcp2vs32", Tcp2Vs32(t=args.time, enabled=args.enabled))
-scen.add("tcpvsudp", TcpVsUdp(t=240, enabled=args.enabled))
+scen.add("tcpvsudp", TcpVsUdp(t=args.time, enabled=args.enabled))
+scen.add("udp", Udp(t=args.time, enabled=args.enabled))
 
 if args.list:
     scen.list()

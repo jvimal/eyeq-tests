@@ -146,6 +146,10 @@ class Host(object):
             ebt += " --ip-sport %d --in-if %s " % (port, self.get_10g_dev())
             ebt += " -j mark --set-mark %d" % tid
             self.cmd(ebt)
+            # Feedback packets (This needs to be corrected!)
+            ebt = "ebtables -t broute -A BROUTING -p ip --ip-proto 143 "
+            ebt += "--in-if %s -j mark --set-mark %d " % (self.get_10g_dev(), tid)
+            self.cmd(ebt)
         return
 
     def start_cpu_monitor(self, dir="/tmp"):
