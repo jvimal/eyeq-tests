@@ -4,7 +4,20 @@ from subprocess import Popen
 import termcolor as T
 
 PI_MODULE = '/root/vimal/10g/perfiso_10g_linux/perfiso.ko'
-PI_DEV = 'eth2'
+PI_MODULE = '/root/vimal/10g/modules/perfiso.ko'
+
+eth1 = 'eth1'
+
+PI_DEV = {
+    3: 'eth3',
+    6: 'eth4',
+    7: 'eth3',
+    16: eth1,
+    17: eth1,
+
+    19: eth1,
+    20: eth1,
+    }
 
 class HostList(object):
     def __init__(self, *lst):
@@ -68,13 +81,56 @@ class Host(object):
     def rmmod(self, mod="perfiso"):
         self.cmd("rmmod %s" % mod)
 
+    def get_10g_dev(self):
+        id = int(self.addr.split('.')[-1])
+        return PI_DEV.get(id, "eth2")
+
+    def get_10g_ip(self):
+        id = int(self.addr.split('.')[-1])
+        return "192.168.2.%d" % id
+
     def insmod(self, mod=PI_MODULE, params="iso_param_dev=eth2"):
+        params = "iso_param_dev=%s" % self.get_10g_dev()
         self.cmd("insmod %s %s" % (mod, params))
 
-    def prepare_iface(self, iface, ip):
+    def prepare_iface(self, iface=None, ip=None):
+        if iface is None:
+            iface = self.get_10g_dev()
+        if ip is None:
+            ip = self.get_10g_ip()
         cmds = ["ifconfig %s 0" % iface,
                 "brctl addbr br0",
                 "brctl addif br0 %s" % iface,
                 "ifconfig br0 %s up" % (ip)]
         self.cmd('; '.join(cmds))
 
+    def remove_bridge(self):
+        cmds = ["ifconfig br0 0 down",
+                "brctl delbr br0",
+                "ifconfig %s %s up"]
+        self.cmd('; '.join(cmds))
+
+    def create_tcp_tenant(self, server_ports=[], tid=1):
+        # Create tid TX and RX classes
+        self.perfiso_create_txc(tid)
+        self.perfiso_create_vq(tid)
+        self.perfiso_assoc_txc_vq(tid, tid)
+
+        # Classify packets out to tid
+        for port in server_ports:
+            ipt = "iptables -A OUTPUT -p tcp --sport %d -j MARK --set-mark %d" % (port, tid)
+            ebt = "ebtables -t broute -A BROUTING -p ip --ip-proto tcp "
+            ebt += " --ip-sport %d --in-if %s " % (port, self.get_10g_dev())
+            ebt += " -j mark --set-mark %d" % tid
+            self.cmd(ipt)
+            self.cmd(ebt)
+        return
+
+    def start_cpu_monitor(self, dir="/tmp"):
+        pass
+
+    def start_bw_monitor(self, dir="/tmp"):
+        pass
+
+    def killall(self):
+        self.cmd("killall -9 ssh iperf top bwm-ng")
