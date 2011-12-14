@@ -115,6 +115,12 @@ class Host(object):
         self.cmd('; '.join(cmds))
 
     def create_tcp_tenant(self, server_ports=[], tid=1, weight=1):
+        self.create_service_tenant("tcp", server_ports, tid, weight)
+
+    def create_udp_tenant(self, server_ports=[], tid=1, weight=1):
+        self.create_service_tenant("udp", server_ports, tid, weight)
+
+    def create_service_tenant(self, proto="tcp", server_ports=[], tid=1, weight=1):
         # Create tid TX and RX classes
         self.perfiso_create_txc(tid)
         self.perfiso_create_vq(tid)
@@ -124,17 +130,19 @@ class Host(object):
         # Classify packets out to tid
         for port in server_ports:
             # Server
-            ipt = "iptables -A OUTPUT -p tcp --sport %d -j MARK --set-mark %d" % (port, tid)
+            ipt = "iptables -A OUTPUT -p %s " % proto
+            ipt += " --sport %d -j MARK --set-mark %d" % (port, tid)
             self.cmd(ipt)
             # Client
-            ipt = "iptables -A OUTPUT -p tcp --dport %d -j MARK --set-mark %d" % (port, tid)
+            ipt = "iptables -A OUTPUT -p %s " % proto
+            ipt += " --dport %d -j MARK --set-mark %d" % (port, tid)
             self.cmd(ipt)
             # Server
-            ebt = "ebtables -t broute -A BROUTING -p ip --ip-proto tcp "
+            ebt = "ebtables -t broute -A BROUTING -p ip --ip-proto %s " % proto
             ebt += " --ip-dport %d --in-if %s " % (port, self.get_10g_dev())
             ebt += " -j mark --set-mark %d" % tid
             self.cmd(ebt)
-            ebt = "ebtables -t broute -A BROUTING -p ip --ip-proto tcp "
+            ebt = "ebtables -t broute -A BROUTING -p ip --ip-proto %s " % proto
             ebt += " --ip-sport %d --in-if %s " % (port, self.get_10g_dev())
             ebt += " -j mark --set-mark %d" % tid
             self.cmd(ebt)
