@@ -134,3 +134,7 @@ class Host(object):
 
     def killall(self):
         self.cmd("killall -9 ssh iperf top bwm-ng")
+
+    def ipt_ebt_flush(self):
+        self.cmd("iptables -F; ebtables -t broute -F")
+

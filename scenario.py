@@ -49,7 +49,7 @@ class Tcp2Vs32(Expt):
         h3.prepare_iface()
 
         hlist.rmmod()
-
+        hlist.ipt_ebt_flush()
         if self.opts("enabled"):
             hlist.insmod()
             self.log("Creating two tenants")
