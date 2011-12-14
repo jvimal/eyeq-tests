@@ -38,6 +38,12 @@ parser.add_argument('--time', '-t',
 
 args = parser.parse_args()
 
+def indent(s, depth=1, char='\t'):
+    lines = []
+    for line in s.split("\n"):
+        lines.append((char * depth + line))
+    return '\n'.join(lines)
+
 class Tcp2Vs32(Expt):
     def __init__(self, **kwargs):
         Expt.__init__(self, kwargs)
@@ -97,12 +103,6 @@ class Tcp2Vs32(Expt):
         for p in self.procs:
             p.kill()
         self.hlist.killall()
-
-def indent(s, depth=1, char='\t'):
-    lines = []
-    for line in s.split("\n"):
-        lines.append((char * depth + line))
-    return '\n'.join(lines)
 
 class Scenarios:
     def __init__(self):
