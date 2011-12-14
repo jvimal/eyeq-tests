@@ -10,13 +10,13 @@ from time import sleep
 from host import *
 
 parser = argparse.ArgumentParser(description="Perfiso simple scenarios testing.")
-parser.add_argument('--test',
-                    dest="test",
-                    type=int,
-                    help="Test number to conduct.")
+parser.add_argument('--run',
+                    dest="run",
+                    default=None,
+                    help="Test name to run.")
 
 parser.add_argument('--list', '-l',
-                    dest="lst",
+                    dest="list",
                     action="store_true",
                     default=False)
 
@@ -89,4 +89,36 @@ class Tcp2Vs32(Expt):
             p.kill()
         self.hlist.killall()
 
-Tcp2Vs32(t=240, enabled=args.enabled).run()
+def indent(s, depth=1, char='\t'):
+    lines = []
+    for line in s.split("\n"):
+        lines.append((char * depth + line))
+    return '\n'.join(lines)
+
+class Scenarios:
+    def __init__(self):
+        self.scenarios = {}
+
+    def list(self):
+        for name, scen in self.scenarios.iteritems():
+            print name
+            print indent(scen.desc)
+
+    def add(self, name, scen):
+        self.scenarios[name] = scen
+
+    def run(self, name):
+        scen = self.scenarios.get(name, None)
+        if scen is not None:
+            scen.run()
+        else:
+            print "Scenario %s not found!"
+
+scen = Scenarios()
+scen.add("tcp2vs32", Tcp2Vs32(t=240, enabled=args.enabled))
+#scen.add("tcpudp", TcpUdp(t=240, enabled=args.enabled))
+
+if args.list:
+    scen.list()
+if args.run:
+    scen.run(args.run)
