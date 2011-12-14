@@ -24,10 +24,17 @@ parser.add_argument('--dir',
                     dest="dir",
                     required=True)
 
-parser.add_argument('--enabled',
+parser.add_argument('--enable',
+                    action="store_true",
                     dest="enabled",
                     help="Enable perfisolation",
                     default=False)
+
+parser.add_argument('--time', '-t',
+                    type=int,
+                    dest="time",
+                    help="Time to run expt",
+                    default=120)
 
 args = parser.parse_args()
 
@@ -54,10 +61,10 @@ class Tcp2Vs32(Expt):
             hlist.insmod()
             self.log("Creating two tenants")
             h1.create_tcp_tenant(server_ports=[5001], tid=1)
-            h1.create_tcp_tenant(server_ports=[5002], tid=1)
+            h1.create_tcp_tenant(server_ports=[5002], tid=2)
 
             h2.create_tcp_tenant(server_ports=[5001], tid=1)
-            h3.create_tcp_tenant(server_ports=[5002], tid=1)
+            h3.create_tcp_tenant(server_ports=[5002], tid=2)
 
         hlist.start_cpu_monitor()
         hlist.start_bw_monitor()
@@ -73,6 +80,7 @@ class Tcp2Vs32(Expt):
         # Start 1 TCP connection from h2 to h1
         client = Iperf({'-p': 5001,
                         '-c': h1.get_10g_ip(),
+                        '-t': args.time,
                         '-P': 1})
         client = client.start_client(h2.get_10g_ip())
         self.procs.append(client)
@@ -80,6 +88,7 @@ class Tcp2Vs32(Expt):
         # Start 32 TCP from h3 to h1
         client = Iperf({'-p': 5002,
                         '-c': h1.get_10g_ip(),
+                        '-t': args.time,
                         '-P': 32})
         client = client.start_client(h3.get_10g_ip())
         self.procs.append(client)
@@ -115,7 +124,7 @@ class Scenarios:
             print "Scenario %s not found!"
 
 scen = Scenarios()
-scen.add("tcp2vs32", Tcp2Vs32(t=240, enabled=args.enabled))
+scen.add("tcp2vs32", Tcp2Vs32(t=args.time, enabled=args.enabled))
 #scen.add("tcpudp", TcpUdp(t=240, enabled=args.enabled))
 
 if args.list:
