@@ -78,6 +78,10 @@ class Host(object):
         c = c % (txc, vq)
         self.cmd(c)
 
+    def perfiso_set_vq_weight(self, vq, weight):
+        c = "echo -n %d weight %d > /sys/module/perfiso/parameters/set_vq_weight" % (vq, weight)
+        self.cmd(c)
+
     def rmmod(self, mod="perfiso"):
         self.cmd("rmmod %s" % mod)
 
@@ -110,11 +114,12 @@ class Host(object):
                 "ifconfig %s %s up"]
         self.cmd('; '.join(cmds))
 
-    def create_tcp_tenant(self, server_ports=[], tid=1):
+    def create_tcp_tenant(self, server_ports=[], tid=1, weight=1):
         # Create tid TX and RX classes
         self.perfiso_create_txc(tid)
         self.perfiso_create_vq(tid)
         self.perfiso_assoc_txc_vq(tid, tid)
+        self.perfiso_set_vq_weight(tid, weight)
 
         # Classify packets out to tid
         for port in server_ports:
@@ -133,7 +138,6 @@ class Host(object):
             ebt += " --ip-sport %d --in-if %s " % (port, self.get_10g_dev())
             ebt += " -j mark --set-mark %d" % tid
             self.cmd(ebt)
-
         return
 
     def start_cpu_monitor(self, dir="/tmp"):
