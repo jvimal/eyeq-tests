@@ -20,6 +20,12 @@ parser.add_argument('--list', '-l',
                     action="store_true",
                     default=False)
 
+parser.add_argument('-P', '--nflows',
+                    dest="P",
+                    action="store",
+                    type=int,
+                    default=4)
+
 parser.add_argument('--dir',
                     dest="dir",
                     required=True)
@@ -69,8 +75,8 @@ from test_udp import Udp
 
 scen = Scenarios()
 scen.add("tcp2vs32", Tcp2Vs32(t=args.time, enabled=args.enabled))
-scen.add("tcpvsudp", TcpVsUdp(t=args.time, enabled=args.enabled))
-scen.add("udp", Udp(t=args.time, enabled=args.enabled))
+scen.add("tcpvsudp", TcpVsUdp(t=args.time, enabled=args.enabled, P=args.P))
+scen.add("udp", Udp(t=args.time, enabled=args.enabled, P=args.P))
 
 if args.list:
     scen.list()

@@ -109,9 +109,11 @@ class Host(object):
         self.cmd('; '.join(cmds))
 
     def remove_bridge(self):
+        iface = self.get_10g_dev()
+        ip = self.get_10g_ip()
         cmds = ["ifconfig br0 0 down",
                 "brctl delbr br0",
-                "ifconfig %s %s up"]
+                "ifconfig %s %s up" % (iface, ip)]
         self.cmd('; '.join(cmds))
 
     def create_tcp_tenant(self, server_ports=[], tid=1, weight=1):

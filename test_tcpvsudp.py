@@ -11,13 +11,13 @@ class TcpVsUdp(Expt):
         h1 = Host("10.0.1.1")
         h2 = Host("10.0.1.2")
         h3 = Host("10.0.1.3")
-        dev="eth2"
         self.hlist = HostList(h1, h2, h3)
         hlist = self.hlist
 
-        h1.prepare_iface()
-        h2.prepare_iface()
-        h3.prepare_iface()
+        if self.opts("enabled"):
+            hlist.prepare_iface()
+        else:
+            hlist.remove_bridge()
 
         hlist.rmmod()
         hlist.ipt_ebt_flush()
@@ -57,7 +57,7 @@ class TcpVsUdp(Expt):
                         '-c': h1.get_10g_ip(),
                         '-t': self.opts("t"),
                         '-b': '3G',
-                        '-P': 32})
+                        '-P': self.opts("P")})
         client = client.start_client(h3.get_10g_ip())
         self.procs.append(client)
 
