@@ -21,7 +21,10 @@ PI_DEV = {
 
 class HostList(object):
     def __init__(self, *lst):
-        self.lst = lst
+        self.lst = list(lst)
+
+    def append(self, host):
+        self.lst.append(host)
 
     def __getattribute__(self, name, *args):
         try:
