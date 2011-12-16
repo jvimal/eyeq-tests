@@ -34,6 +34,7 @@ class Host(object):
     _ssh_cache = {}
     def __init__(self, addr):
         self.addr = addr
+        self.tenants = []
 
     def get(self):
         ssh = Host._ssh_cache.get(self.addr, None)
@@ -79,7 +80,7 @@ class Host(object):
         self.cmd(c)
 
     def perfiso_set_vq_weight(self, vq, weight):
-        c = "echo -n %d weight %d > /sys/module/perfiso/parameters/set_vq_weight" % (vq, weight)
+        c = "echo -n %s weight %d > /sys/module/perfiso/parameters/set_vq_weight" % (vq, weight)
         self.cmd(c)
 
     def rmmod(self, mod="perfiso"):
@@ -93,6 +94,11 @@ class Host(object):
         id = int(self.addr.split('.')[-1])
         return "192.168.2.%d" % id
 
+    def get_tenant_ip(self, tid=1):
+        assert(tid > 0 and tid < 255)
+        myindex = int(self.addr.split('.')[-1])
+        return "11.0.%d.%d" % (myindex, tid)
+
     def insmod(self, mod=PI_MODULE, params="iso_param_dev=eth2"):
         params = "iso_param_dev=%s" % self.get_10g_dev()
         self.cmd("insmod %s %s" % (mod, params))
@@ -103,6 +109,8 @@ class Host(object):
         if ip is None:
             ip = self.get_10g_ip()
         cmds = ["ifconfig %s 0" % iface,
+                "ifconfig br0 down",
+                "brctl delbr br0",
                 "brctl addbr br0",
                 "brctl addif br0 %s" % iface,
                 "ifconfig br0 %s up" % (ip)]
@@ -115,6 +123,17 @@ class Host(object):
                 "brctl delbr br0",
                 "ifconfig %s %s up" % (iface, ip)]
         self.cmd('; '.join(cmds))
+
+    def create_ip_tenant(self, tid=1, weight=1):
+        ip = self.get_tenant_ip(tid)
+        self.tenants.append(tid)
+        self.perfiso_create_txc(ip)
+        self.perfiso_create_vq(ip)
+        self.perfiso_assoc_txc_vq(ip, ip)
+        self.perfiso_set_vq_weight(ip, weight)
+        # Configure an alias for the bridge interface
+        dev = self.get_10g_dev()
+        self.cmd("ifconfig br0:%d %s" % (tid, self.get_tenant_ip(tid)))
 
     def create_tcp_tenant(self, server_ports=[], tid=1, weight=1):
         self.create_service_tenant("tcp", server_ports, tid, weight)
@@ -166,3 +185,15 @@ class Host(object):
     def ipt_ebt_flush(self):
         self.cmd("iptables -F; ebtables -t broute -F")
 
+    def remove_tenants(self):
+        # For iptables/ebtables mark based tenants, use this
+        # self.ipt_ebt_flush()
+        # This is for IP based tenants
+        for tid in self.tenants:
+            self.cmd("ifconfig br0:%d down" % tid)
+
+    def configure_rps(self):
+        dev = self.get_10g_dev()
+        c = "for dir in /sys/class/net/%s/queues/rx*; do "
+        c += " echo e > $dir/rps_cpus; done"
+        self.cmd(c % dev)
