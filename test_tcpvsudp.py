@@ -11,9 +11,14 @@ class TcpVsUdp(Expt):
     def start(self):
         h1 = Host("10.0.1.1")
         h2 = Host("10.0.1.2")
-        h3 = Host("10.0.1.3")
-        self.hlist = HostList(h1, h2, h3)
-        hlist = self.hlist
+        hlist = HostList(h1, h2)
+        hlist_udp = HostList()
+        for i in xrange(3, 3+self.opts("n")+1):
+            hi = Host("10.0.1.%d" % i)
+            hlist.append(hi)
+            hlist_udp.append(hi)
+
+        self.hlist = hlist
 
         if self.opts("enabled"):
             hlist.prepare_iface()
@@ -34,7 +39,8 @@ class TcpVsUdp(Expt):
             h1.create_ip_tenant(tid=2)
 
             h2.create_ip_tenant(tid=1)
-            h3.create_ip_tenant(tid=1)
+            for hi in hlist_udp.lst:
+                hi.create_ip_tenant(tid=1)
 
         hlist.perfiso_set("IsoAutoGenerateFeedback", "1")
         hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", 8700)
@@ -44,10 +50,13 @@ class TcpVsUdp(Expt):
 
         self.procs = []
         # Start iperf servers
-        for p in [5001, 5002]:
+        for p in [5001]:
             opts = {'-p': p}
-            if p == 5002:
-                opts['-u'] = True
+            iperf = Iperf(opts)
+            server = iperf.start_server(h1.addr)
+            self.procs.append(server)
+        for p in range(5002, 5002+self.opts("n")+1):
+            opts = {'-p': p, '-u': True}
             iperf = Iperf(opts)
             server = iperf.start_server(h1.addr)
             self.procs.append(server)
@@ -61,14 +70,15 @@ class TcpVsUdp(Expt):
         client = client.start_client(h2.addr)
         self.procs.append(client)
 
-        # Start 32 UDP from h3 to h1
-        client = Iperf({'-p': 5002,
-                        '-c': h1.get_tenant_ip(2),
-                        '-t': self.opts("t"),
-                        '-b': '3G',
-                        '-P': self.opts("P")})
-        client = client.start_client(h3.addr)
-        self.procs.append(client)
+        for hi in hlist_udp.lst:
+            # Start 32 UDP from h3 to h1
+            client = Iperf({'-p': 5002,
+                            '-c': h1.get_tenant_ip(2),
+                            '-t': self.opts("t"),
+                            '-b': '3G',
+                            '-P': self.opts("P")})
+            client = client.start_client(hi.addr)
+            self.procs.append(client)
 
     def stop(self):
         self.hlist.remove_tenants()
