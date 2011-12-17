@@ -158,7 +158,7 @@ class RxOverhead2(Expt):
         for i in xrange(n):
             iperf = Iperf({'-p': 5001,
                            '-P': parallel,
-                           '-c': h1.addr,
+                           '-c': h1.get_10g_ip(),
                            '-t': self.opts('t')})
             client = iperf.start_client(h2.addr)
             self.procs.append(client)
