@@ -74,8 +74,8 @@ class TxOverhead(Expt):
         host.cmd("tc qdisc add dev %s root handle 1: htb default 1000" % dev)
         for i in xrange(n):
             c = "tc class add dev %s parent 1: " % dev
-            c += " classid 1:%d htb rate %sMbit" % (dev, i+1, rate)
-            host.cmd()
+            c += " classid 1:%d htb rate %sMbit" % (i+1, rate)
+            host.cmd(c)
         for i in xrange(n):
             c = "tc filter add dev %s" % dev
             c += " parent 1: protocol ip prio 1 "
@@ -99,7 +99,7 @@ class TxOverhead(Expt):
             for i in xrange(n):
                 h1.create_ip_tenant(i+1)
         else:
-            self.configure_qdisc(h1.get_10g_dev(), h1)
+            self.configure_qdisc(h1)
 
         # Filter traffic to dest iperf port 5001+i to skb mark i+1
         hlist.cmd("killall -9 iperf; iptables -F")
@@ -126,9 +126,12 @@ class TxOverhead(Expt):
 
         sleep(1)
         for i in xrange(n):
+            ip = h2.get_10g_ip()
+            if self.opts("rl") == "perfiso":
+                ip = h2.get_tenant_ip(i+1)
             iperf = Iperf({'-p': 5001,
                            '-P': parallel,
-                           '-c': h2.get_tenant_ip(i+1),
+                           '-c': ip,
                            '-t': self.opts('t')})
             client = iperf.start_client(h1.addr)
             self.procs.append(client)
