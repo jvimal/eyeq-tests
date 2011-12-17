@@ -45,8 +45,7 @@ class TcpVsUdp(Expt):
         hlist.perfiso_set("IsoAutoGenerateFeedback", "1")
         hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", 8700)
         hlist.perfiso_set("ISO_VQ_UPDATE_INTERVAL_US", 25)
-        hlist.start_cpu_monitor()
-        hlist.start_bw_monitor()
+        hlist.start_monitors(self.opts("dir"))
 
         self.procs = []
         # Start iperf servers

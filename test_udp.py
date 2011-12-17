@@ -36,8 +36,7 @@ class Udp(Expt):
             #hlist.perfiso_set("ISO_MAX_BURST_TIME_US", 500)
             #hlist.perfiso_set("ISO_VQ_MARK_THRESH_BYTES", 25 * 1024)
 
-        hlist.start_cpu_monitor()
-        hlist.start_bw_monitor()
+        hlist.start_monitors(self.opts("dir"))
 
         self.procs = []
         # Start iperf servers

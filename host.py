@@ -2,6 +2,7 @@
 import paramiko
 from subprocess import Popen
 import termcolor as T
+import os
 
 PI_MODULE = '/root/vimal/10g/perfiso_10g_linux/perfiso.ko'
 PI_MODULE = '/root/vimal/10g/modules/perfiso.ko'
@@ -60,7 +61,6 @@ class Host(object):
         ssh = self.get()
         self.log(c)
         out = ssh.exec_command(c)
-        self.procs.append(out)
         return out
 
     def log(self, c):
@@ -208,12 +208,16 @@ class Host(object):
 
     # Monitoring scripts
     def start_cpu_monitor(self, dir="/tmp"):
+        dir = os.path.abspath(dir)
         path = os.path.join(dir, "cpu.txt")
+        self.cmd("mkdir -p %s" % dir)
         cmd = "(top -b -p1 -d1 | grep --line-buffered \"^Cpu\") > %s" % path
         return self.cmd_async(cmd)
 
     def start_bw_monitor(self, dir="/tmp", interval_sec=2):
+        dir = os.path.abspath(dir)
         path = os.path.join(dir, "net.txt")
+        self.cmd("mkdir -p %s" % dir)
         cmd = "bwm-ng -t %s -o csv -u bits -T rate -C ',' > %s" % (interval_sec * 1000, path)
         return self.cmd_async(cmd)
 

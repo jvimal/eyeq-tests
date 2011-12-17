@@ -32,8 +32,7 @@ class Tcp2Vs32(Expt):
             h2.create_ip_tenant(tid=1)
             h3.create_ip_tenant(tid=1)
 
-        hlist.start_cpu_monitor()
-        hlist.start_bw_monitor()
+        hlist.start_monitors(self.opts("dir"))
         hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", 8700)
         hlist.perfiso_set("IsoAutoGenerateFeedback", 1)
         hlist.perfiso_set("ISO_VQ_UPDATE_INTERVAL_US", 25)

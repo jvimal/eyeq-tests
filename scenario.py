@@ -80,9 +80,10 @@ from test_tcpvsudp import TcpVsUdp
 from test_udp import Udp
 
 scen = Scenarios()
-scen.add("tcp2vs32", Tcp2Vs32(t=args.time, enabled=args.enabled))
-scen.add("tcpvsudp", TcpVsUdp(t=args.time, enabled=args.enabled, P=args.P, n=args.n))
-scen.add("udp", Udp(t=args.time, enabled=args.enabled, P=args.P))
+scen.add("tcp2vs32", Tcp2Vs32(t=args.time, enabled=args.enabled, dir=args.dir))
+scen.add("tcpvsudp", TcpVsUdp(t=args.time, enabled=args.enabled,
+                              P=args.P, n=args.n, dir=args.dir))
+scen.add("udp", Udp(t=args.time, enabled=args.enabled, P=args.P, dir=args.dir))
 
 if args.list:
     scen.list()
