@@ -38,6 +38,8 @@ class Host(object):
     def __init__(self, addr):
         self.addr = addr
         self.tenants = []
+        # List of processes spawned async on this host
+        self.procs = []
 
     def get(self):
         ssh = Host._ssh_cache.get(self.addr, None)
@@ -58,6 +60,7 @@ class Host(object):
         ssh = self.get()
         self.log(c)
         out = ssh.exec_command(c)
+        self.procs.append(out)
         return out
 
     def log(self, c):
@@ -131,6 +134,8 @@ class Host(object):
         iface = self.get_10g_dev()
         self.cmd("tc qdisc del dev %s root" % iface)
 
+    # Tenant creation/deletion.  IP tenant is the cleanest, and
+    # closest to a mac-addr like VM tenant
     def create_ip_tenant(self, tid=1, weight=1):
         ip = self.get_tenant_ip(tid)
         self.tenants.append(tid)
@@ -180,13 +185,9 @@ class Host(object):
             self.cmd(ebt)
         return
 
-    def start_cpu_monitor(self, dir="/tmp"):
-        pass
-
-    def start_bw_monitor(self, dir="/tmp"):
-        pass
-
     def killall(self):
+        for p in self.procs:
+            p.kill()
         self.cmd("killall -9 ssh iperf top bwm-ng")
 
     def ipt_ebt_flush(self):
@@ -204,3 +205,18 @@ class Host(object):
         c = "for dir in /sys/class/net/%s/queues/rx*; do "
         c += " echo e > $dir/rps_cpus; done"
         self.cmd(c % dev)
+
+    # Monitoring scripts
+    def start_cpu_monitor(self, dir="/tmp"):
+        path = os.path.join(dir, "cpu.txt")
+        cmd = "(top -b -p1 -d1 | grep --line-buffered \"^Cpu\") > %s" % path
+        return self.cmd_async(cmd)
+
+    def start_bw_monitor(self, dir="/tmp", interval_sec=2):
+        path = os.path.join(dir, "net.txt")
+        cmd = "bwm-ng -t %s -o csv -u bits -T rate -C ',' > %s" % (interval_sec * 1000, path)
+        return self.cmd_async(cmd)
+
+    def start_monitors(self, dir="/tmp"):
+        self.start_cpu_monitor(dir)
+        self.start_bw_monitor(dir)
