@@ -66,47 +66,43 @@ if int(args.timeout) <= 1000:
     sys.exit(0)
 
 class TxOverhead(Expt):
-    def configure_qdisc(self):
-        dev="eth2"
+    def configure_qdisc(self, host):
+        dev = host.get_10g_dev()
         rate = self.opts("rate")
         n = self.opts("n")
-        cmd("tc qdisc del dev %s root" % dev)
-        cmd("tc qdisc add dev %s root handle 1: htb default 1000" % dev)
+        host.cmd("tc qdisc del dev %s root" % dev)
+        host.cmd("tc qdisc add dev %s root handle 1: htb default 1000" % dev)
         for i in xrange(n):
-            cmd("tc class add dev %s parent 1: classid 1:%d htb rate %sMbit" % (dev, i+1, rate))
+            c = "tc class add dev %s parent 1: " % dev
+            c += " classid 1:%d htb rate %sMbit" % (dev, i+1, rate)
+            host.cmd()
         for i in xrange(n):
             c = "tc filter add dev %s" % dev
-            c += " parent 1: protocol ip prio %d handle %d fw classid 1:%d" % (i+1, i+1, i+1)
-            cmd(c)
+            c += " parent 1: protocol ip prio 1 "
+            c += " u32 match ip src %s classid 1:%d" % (host.get_tenant_ip(i+1), i+1)
+            host.cmd(c)
 
     def start(self):
-        h1 = Host("192.168.1.1")
-        h2 = Host("192.168.1.2")
+        h1 = Host("10.0.1.1")
+        h2 = Host("10.0.1.2")
         hlist = HostList(h1, h2)
+        self.hlist = hlist
         hlist.rmmod()
-        remove_qdiscs()
+        hlist.remove_qdiscs()
         n = self.opts('n')
 
         if self.opts('rl') == "perfiso":
             h1.insmod()
             h1.perfiso_set("ISO_MAX_TX_RATE", self.opts('rate'))
-            h1.perfiso_set("ISO_MAX_TX_RATE", self.opts('rate'))
             h1.perfiso_set("ISO_RFAIR_INITIAL", self.opts('rate'))
             h1.perfiso_set("ISO_TOKENBUCKET_TIMEOUT_NS", self.opts('timeout'))
             for i in xrange(n):
-                h1.perfiso_create_txc(i+1)
+                h1.create_ip_tenant(i+1)
         else:
-            self.configure_qdisc()
+            self.configure_qdisc(h1.get_10g_dev(), h1)
 
         # Filter traffic to dest iperf port 5001+i to skb mark i+1
         hlist.cmd("killall -9 iperf; iptables -F")
-        self.log("Adding iptables classifiers")
-
-        for i in xrange(n):
-            klass = i+1
-            c = "iptables -A OUTPUT --dst 192.168.2.2"
-            c += " -p tcp --dport %d -j MARK --set-mark %d" % (5000 + klass, klass)
-            h1.cmd(c)
 
         self.log("Starting CPU/bandwidth monitors")
         # Start monitors
@@ -122,32 +118,27 @@ class TxOverhead(Expt):
         # Start iperfs servers
         parallel = self.opts("P")
         for i in xrange(n):
-            klass = i+1
-            port = 5000 + klass
-            iperf = Iperf({'-p': port,
-                           '-P': parallel,
-                           '-c': '192.168.2.2'})
-            server = iperf.start_server('192.168.2.2')
+            iperf = Iperf({'-p': 5001,
+                           '-P': parallel})
+            server = iperf.start_server(h2.addr)
             self.procs.append(server)
-            self.log("server %d" % klass)
             sleep(0.1)
 
         sleep(1)
         for i in xrange(n):
-            klass = i+1
-            port = 5000 + klass
-            iperf = Iperf({'-p': port,
+            iperf = Iperf({'-p': 5001,
                            '-P': parallel,
-                           '-c': '192.168.2.2',
+                           '-c': h2.get_tenant_ip(i+1),
                            '-t': self.opts('t')})
-            client = iperf.start_client('192.168.2.1')
+            client = iperf.start_client(h1.addr)
             self.procs.append(client)
-            self.log("client %d" % klass)
+            sleep(0.1)
 
     def stop(self):
+        self.hlist.remove_tenants()
+        self.hlist.killall()
         for p in self.procs:
             p.kill()
-        killall()
 
 TxOverhead({
         'n': args.n,
