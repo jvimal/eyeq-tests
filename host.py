@@ -127,6 +127,10 @@ class Host(object):
                 "ifconfig %s %s up" % (iface, ip)]
         self.cmd('; '.join(cmds))
 
+    def remove_qdiscs(self):
+        iface = self.get_10g_dev()
+        self.cmd("tc qdisc del dev %s root" % iface)
+
     def create_ip_tenant(self, tid=1, weight=1):
         ip = self.get_tenant_ip(tid)
         self.tenants.append(tid)

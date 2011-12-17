@@ -57,59 +57,25 @@ if int(args.timeout) <= 10:
     print "Too low timeout, but nothing prevents you from setting it."
     sys.exit(0)
 
-PI_PATH='python /root/vimal/10g/perfiso_10g_linux/tools/pi.py'
-
 class RxOverhead(Expt):
     def start(self):
-        h1 = Host("192.168.1.1")
-        h2 = Host("192.168.1.2")
+        h1 = Host("10.0.1.1")
+        h2 = Host("10.0.1.2")
         hlist = HostList(h1, h2)
-        dev="eth2"
         n = self.opts('n')
 
         hlist.rmmod()
-        remove_qdiscs()
+        hlist.remove_qdiscs()
         hlist.insmod()
 
-        h1.prepare_iface(dev, "192.168.2.1")
-        h2.prepare_iface(dev, "192.168.2.2")
-
+        hlist.prepare_iface()
         # VQ drain rate
         h1.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", self.opts('rate'))
 
         # Create vq class
         self.log("Creating vq classes")
         for i in xrange(n):
-            hlist.perfiso_create_txc(i + 1)
-            hlist.perfiso_create_vq(i + 1)
-            hlist.perfiso_assoc_txc_vq(i+1, i+1)
-
-        # Filter traffic to dest iperf port 5001+i to skb mark i+1
-        hlist.cmd("killall -9 iperf; iptables -F; ebtables -t broute -F")
-        self.log("Adding packet classifiers")
-        for i in xrange(n):
-            klass = i+1
-            c = "ebtables -t broute -A BROUTING -p ip --ip-proto tcp "
-            c += " --ip-dport %d --in-if %s" % (5000 + klass, dev)
-            c += " -j mark --set-mark %d" % (klass)
-            h1.cmd(c)
-
-            # TX
-            c = "iptables -A OUTPUT --dst 192.168.2.2 -p tcp --sport %d " % (5000 + klass)
-            c += " -j MARK --set-mark %d" % klass
-            h1.cmd(c)
-
-        for i in xrange(n):
-            klass = i+1
-            c = "ebtables -t broute -A BROUTING -p ip --ip-proto tcp "
-            c += " --ip-sport %d --in-if %s" % (5000 + klass, dev)
-            c += " -j mark --set-mark %d" % (klass)
-            h2.cmd(c)
-
-            # TX
-            c = "iptables -A OUTPUT --dst 192.168.2.1 -p tcp --dport %d " % (5000 + klass)
-            c += " -j MARK --set-mark %d" % klass
-            h2.cmd(c)
+            hlist.create_ip_tenant(i+1)
 
         self.log("Starting CPU/bandwidth monitors")
         # Start monitors
@@ -124,93 +90,47 @@ class RxOverhead(Expt):
         self.log("Starting %d iperfs" % n)
         # Start iperfs servers
         for i in xrange(n):
-            klass = i+1
-            port = 5000 + klass
             parallel = 4
-            iperf = Iperf({'-p': port,
-                           '-P': parallel,
-                           '-c': '192.168.2.2'})
-            server = iperf.start_server('192.168.2.1')
+            iperf = Iperf({'-p': 5001,
+                           '-P': parallel})
+            server = iperf.start_server(h1.addr)
             self.procs.append(server)
-            self.log("server %d" % klass)
+            self.log("server %d" % i)
 
         sleep(1)
         for i in xrange(n):
-            klass = i+1
-            port = 5000 + klass
-            iperf = Iperf({'-p': port,
+            iperf = Iperf({'-p': 5001,
                            '-P': parallel,
-                           '-c': '192.168.2.1',
+                           '-c': h1.get_tenant_ip(i+1),
                            '-t': self.opts('t')})
-            client = iperf.start_client('192.168.2.2')
+            client = iperf.start_client(h2.addr)
             self.procs.append(client)
-            self.log("client %d" % klass)
-            sleep(0.1)
+            self.log("client %d" % i)
 
     def stop(self):
+        self.hlist.killall()
+        self.hlist.remove_tenants()
         for p in self.procs:
             p.kill()
-        killall()
 
 class RxOverhead2(Expt):
-    def prepare_iface(self, host, iface, ip):
-        self.log("Preparing iface on %s" % host)
-        cmds = ["ifconfig %s 0" % iface,
-                "brctl addbr br0",
-                "brctl addif br0 %s" % iface,
-                "ifconfig br0 %s up" % (ip)]
-        cmd_host(host, '; '.join(cmds))
-
     def start(self):
-        dev="eth2"
-        h1 = Host("192.168.1.1")
-        h2 = Host("192.168.1.2")
+        h1 = Host("10.0.1.1")
+        h2 = Host("10.0.1.2")
         hlist = HostList(h1, h2)
-        dev="eth2"
         n = self.opts('n')
 
         hlist.rmmod()
-        remove_qdiscs()
+        hlist.remove_qdiscs()
         n = self.opts('n')
 
-        h1.prepare_iface(dev, "192.168.2.1")
-        h2.prepare_iface(dev, "192.168.2.2")
-        hlist.insmod()
+        hlist.prepare_iface()
+        h2.insmod()
         h2.perfiso_set("ISO_MAX_TX_RATE", self.opts("rate"))
 
         # Create vq class
         for i in xrange(1):
-            h2.perfiso_create_txc(i+1)
-            h2.perfiso_create_vq(i+1)
-            h2.perfiso_assoc_txc_vq(i+1, i+1)
-
-        # Filter traffic to dest iperf port 5001+i to skb mark i+1
-        hlist.cmd("killall -9 iperf; iptables -F; ebtables -t broute -F")
-
-        self.log("Adding packet classifiers")
-        for i in xrange(1):
-            klass = i+1
-            c = "ebtables -t broute -A BROUTING -p ip --ip-proto tcp "
-            c += " --in-if %s" % (dev)
-            c += " -j mark --set-mark %d" % (klass)
-            h1.cmd(c)
-
-            # TX
-            c = "iptables -A OUTPUT --dst 192.168.2.2 -p tcp "
-            c += " -j MARK --set-mark %d" % klass
-            h1.cmd(c)
-
-        for i in xrange(1):
-            klass = i+1
-            c = "ebtables -t broute -A BROUTING -p ip --ip-proto tcp "
-            c += " --in-if %s" % (dev)
-            c += " -j mark --set-mark %d" % (klass)
-            h2.cmd(c)
-
-            # TX
-            c = "iptables -A OUTPUT --dst 192.168.2.1 -p tcp "
-            c += " -j MARK --set-mark %d" % klass
-            h2.cmd(c)
+            h2.create_ip_tenant(i+1)
 
         self.log("Starting CPU/bandwidth monitors")
         # Start monitors
@@ -226,33 +146,30 @@ class RxOverhead2(Expt):
 
         # Start iperfs servers
         for i in xrange(n):
-            klass = i+1
-            port = 5000 + klass
             parallel = 4
-            iperf = Iperf({'-p': port,
-                           '-P': parallel,
-                           '-c': '192.168.2.2'})
-            server = iperf.start_server('192.168.2.1')
+            iperf = Iperf({'-p': 5001,
+                           '-P': parallel})
+            server = iperf.start_server(h1.addr)
             self.procs.append(server)
-            self.log("server %d" % klass)
+            self.log("server %d" % i)
+            sleep(0.1)
 
         sleep(1)
         for i in xrange(n):
-            klass = i+1
-            port = 5000 + klass
-            iperf = Iperf({'-p': port,
+            iperf = Iperf({'-p': 5001,
                            '-P': parallel,
-                           '-c': '192.168.2.1',
+                           '-c': h1.addr,
                            '-t': self.opts('t')})
-            client = iperf.start_client('192.168.2.2')
+            client = iperf.start_client(h2.addr)
             self.procs.append(client)
-            self.log("client %d" % klass)
+            self.log("client %d" % i)
             sleep(0.1)
 
     def stop(self):
+        self.hlist.remove_tenants()
+        self.hlist.killall()
         for p in self.procs:
             p.kill()
-        killall()
 
 if not args.without_vq:
     RxOverhead({
