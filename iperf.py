@@ -10,6 +10,8 @@ class Iperf:
         cmd = "iperf -s -p %d" % (self.opts.get('-p', 5001))
         if self.opts.get('-u', False):
             cmd += " -u -l32k"
+        if self.opts.get('-B', False):
+            cmd += " -B %s " % self.opts.get('-B')
         h = Host(host)
         h.cmd_async(cmd)
         return self
@@ -22,6 +24,8 @@ class Iperf:
         cmd = "iperf -c %s -p %s -P %s -t %d" % (server_ip, port, parallel, t)
         if self.opts.get('-b', False): # -b implies UDP, which is weird
             cmd += " -b %s -l32k" % self.opts.get('-b')
+        if self.opts.get('-B', False):
+            cmd += " -B %s " % self.opts.get('-B')
         cmd += " > /tmp/iperf-%s 2>&1" % server_ip
         h = Host(host)
         h.cmd_async(cmd)

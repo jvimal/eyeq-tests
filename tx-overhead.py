@@ -90,10 +90,11 @@ class TxOverhead(Expt):
         hlist.rmmod()
         hlist.remove_qdiscs()
         n = self.opts('n')
+        hlist.prepare_iface()
 
         if self.opts('rl') == "perfiso":
-            hlist.prepare_iface()
             hlist.insmod()
+            hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", "11000")
             hlist.perfiso_set("ISO_MAX_TX_RATE", self.opts('rate'))
             hlist.perfiso_set("ISO_RFAIR_INITIAL", self.opts('rate'))
             hlist.perfiso_set("ISO_TOKENBUCKET_TIMEOUT_NS", self.opts('timeout'))
@@ -101,6 +102,8 @@ class TxOverhead(Expt):
                 hlist.create_ip_tenant(i+1)
         else:
             self.configure_qdisc(h1)
+            for i in xrange(n):
+                hlist.create_ip_tenant(i+1)
 
         # Filter traffic to dest iperf port 5001+i to skb mark i+1
         hlist.cmd("killall -9 iperf; iptables -F")
@@ -118,25 +121,21 @@ class TxOverhead(Expt):
         self.log("Starting %d iperfs" % n)
         # Start iperfs servers
         parallel = self.opts("P")
-        for i in xrange(n):
-            iperf = Iperf({'-p': 5001,
-                           '-P': parallel})
-            server = iperf.start_server(h2.addr)
-            self.procs.append(server)
-            sleep(0.1)
+        iperf = Iperf({'-p': 5001,
+                       '-P': parallel})
+        server = iperf.start_server(h2.addr)
+        self.procs.append(server)
 
         sleep(1)
         for i in xrange(n):
-            ip = h2.get_10g_ip()
-            if self.opts("rl") == "perfiso":
-                ip = h2.get_tenant_ip(i+1)
+            ip = h2.get_tenant_ip(i+1)
             iperf = Iperf({'-p': 5001,
                            '-P': parallel,
                            '-c': ip,
+                           '-B': h1.get_tenant_ip(i+1),
                            '-t': self.opts('t')})
             client = iperf.start_client(h1.addr)
             self.procs.append(client)
-            sleep(0.1)
 
     def stop(self):
         self.hlist.remove_tenants()
