@@ -62,6 +62,7 @@ class RxOverhead(Expt):
         h1 = Host("10.0.1.1")
         h2 = Host("10.0.1.2")
         hlist = HostList(h1, h2)
+        self.hlist = hlist
         n = self.opts('n')
 
         hlist.rmmod()
@@ -118,6 +119,7 @@ class RxOverhead2(Expt):
         h1 = Host("10.0.1.1")
         h2 = Host("10.0.1.2")
         hlist = HostList(h1, h2)
+        self.hlist = hlist
         n = self.opts('n')
 
         hlist.rmmod()
