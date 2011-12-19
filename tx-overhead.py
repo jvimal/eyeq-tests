@@ -92,12 +92,13 @@ class TxOverhead(Expt):
         n = self.opts('n')
 
         if self.opts('rl') == "perfiso":
-            h1.insmod()
-            h1.perfiso_set("ISO_MAX_TX_RATE", self.opts('rate'))
-            h1.perfiso_set("ISO_RFAIR_INITIAL", self.opts('rate'))
-            h1.perfiso_set("ISO_TOKENBUCKET_TIMEOUT_NS", self.opts('timeout'))
+            hlist.prepare_iface()
+            hlist.insmod()
+            hlist.perfiso_set("ISO_MAX_TX_RATE", self.opts('rate'))
+            hlist.perfiso_set("ISO_RFAIR_INITIAL", self.opts('rate'))
+            hlist.perfiso_set("ISO_TOKENBUCKET_TIMEOUT_NS", self.opts('timeout'))
             for i in xrange(n):
-                h1.create_ip_tenant(i+1)
+                hlist.create_ip_tenant(i+1)
         else:
             self.configure_qdisc(h1)
 
