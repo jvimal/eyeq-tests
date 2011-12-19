@@ -3,6 +3,7 @@ import paramiko
 from subprocess import Popen
 import termcolor as T
 import os
+import socket
 
 PI_MODULE = '/root/vimal/10g/perfiso_10g_linux/perfiso.ko'
 PI_MODULE = '/root/vimal/10g/modules/perfiso.ko'
@@ -199,6 +200,7 @@ class Host(object):
         # This is for IP based tenants
         for tid in self.tenants:
             self.cmd("ifconfig br0:%d down" % tid)
+        self.remove_bridge()
 
     def configure_rps(self):
         dev = self.get_10g_dev()
@@ -224,3 +226,21 @@ class Host(object):
     def start_monitors(self, dir="/tmp"):
         self.start_cpu_monitor(dir)
         self.start_bw_monitor(dir)
+
+    def copy(self, dest="l1", dir="/tmp"):
+        dir = os.path.abspath(dir)
+        # Fix this
+        expt = os.path.basename(dir)
+        if dir == "/tmp":
+            return
+        if type(dest) == str:
+            dest = Host(dest)
+        src_path = dir
+        dst_path = "~/vimal/10g/exptdata/%s/%s/" % (expt, self.hostname())
+        dest.cmd("mkdir -p %s" % dst_path)
+        opts = "-o StrictHostKeyChecking=no"
+        c = "scp %s -r %s/* %s:%s" % (opts, src_path, dest.hostname(), dst_path)
+        self.cmd(c)
+
+    def hostname(self):
+        return socket.gethostbyaddr(self.addr)[0]
