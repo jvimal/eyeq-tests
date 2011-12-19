@@ -32,10 +32,11 @@ class Tcp2Vs32(Expt):
             h2.create_ip_tenant(tid=1)
             h3.create_ip_tenant(tid=1)
 
+        if self.opts("enabled"):
+            hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", 8700)
+            hlist.perfiso_set("IsoAutoGenerateFeedback", 1)
+            hlist.perfiso_set("ISO_VQ_UPDATE_INTERVAL_US", 25)
         hlist.start_monitors(self.opts("dir"))
-        hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", 8700)
-        hlist.perfiso_set("IsoAutoGenerateFeedback", 1)
-        hlist.perfiso_set("ISO_VQ_UPDATE_INTERVAL_US", 25)
 
         self.procs = []
         # Start iperf servers
@@ -47,22 +48,27 @@ class Tcp2Vs32(Expt):
         sleep(1)
         # Start 1 TCP connection from h2 to h1
         client = Iperf({'-p': 5001,
-                        '-c': h1.get_tenant_ip(1), #h1.get_10g_ip(),
+                        '-c': h1.get_10g_ip(),
                         '-t': self.opts("t"),
                         '-P': 1})
+        if self.opts("enabled"):
+            client.opts["-c"] = h1.get_tenant_ip(1)
         client = client.start_client(h2.addr)
         self.procs.append(client)
 
         # Start 32 TCP from h3 to h1
         client = Iperf({'-p': 5002,
-                        '-c': h1.get_tenant_ip(2), #h1.get_10g_ip(),
+                        '-c': h1.get_10g_ip(),
                         '-t': self.opts("t"),
                         '-P': 32})
+        if self.opts("enabled"):
+            client.opts["-c"] = h1.get_tenant_ip(2)
         client = client.start_client(h3.addr)
         self.procs.append(client)
 
     def stop(self):
         self.hlist.remove_tenants()
+        self.hlist.copy("l1", self.opts("dir"))
         for p in self.procs:
             p.kill()
         self.hlist.killall()

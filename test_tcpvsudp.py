@@ -42,45 +42,46 @@ class TcpVsUdp(Expt):
             for hi in hlist_udp.lst:
                 hi.create_ip_tenant(tid=1)
 
-        hlist.perfiso_set("IsoAutoGenerateFeedback", "1")
-        hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", 8700)
-        hlist.perfiso_set("ISO_VQ_UPDATE_INTERVAL_US", 25)
+        if self.opts("enabled"):
+            hlist.perfiso_set("IsoAutoGenerateFeedback", "1")
+            hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", 8700)
+            hlist.perfiso_set("ISO_VQ_UPDATE_INTERVAL_US", 25)
         hlist.start_monitors(self.opts("dir"))
 
         self.procs = []
         # Start iperf servers
-        for p in [5001]:
-            opts = {'-p': p}
-            iperf = Iperf(opts)
-            server = iperf.start_server(h1.addr)
-            self.procs.append(server)
-        for p in range(5002, 5002+self.opts("n")+1):
-            opts = {'-p': p, '-u': True}
-            iperf = Iperf(opts)
-            server = iperf.start_server(h1.addr)
-            self.procs.append(server)
+        iperf = Iperf({'-p': 5001})
+        server = iperf.start_server(h1.addr)
+        self.procs.append(server)
 
         sleep(1)
         # Start 1 TCP connection from h2 to h1
-        client = Iperf({'-p': 5001,
-                        '-c': h1.get_tenant_ip(1),
-                        '-t': self.opts("t"),
-                        '-P': 1})
+        opts = {'-p': 5001,
+                '-c': h1.get_10g_ip(),
+                '-t': self.opts("t"),
+                '-P': 1}
+        if self.opts("enabled"):
+            opts['-c'] = h1.get_tenant_ip(1)
+        client = Iperf(opts)
         client = client.start_client(h2.addr)
         self.procs.append(client)
 
         for hi in hlist_udp.lst:
             # Start 32 UDP from h3 to h1
-            client = Iperf({'-p': 5002,
-                            '-c': h1.get_tenant_ip(2),
-                            '-t': self.opts("t"),
-                            '-b': '3G',
-                            '-P': self.opts("P")})
+            opts = {'-p': 5002,
+                    '-c': h1.get_10g_ip(),
+                    '-t': self.opts("t"),
+                    '-b': '3G',
+                    '-P': self.opts("P")}
+            if self.opts("enabled"):
+                opts['-c'] = h1.get_tenant_ip(2)
+            client = Iperf(opts)
             client = client.start_client(hi.addr)
             self.procs.append(client)
 
     def stop(self):
         self.hlist.remove_tenants()
+        self.hlist.copy("l1", self.opts("dir"))
         for p in self.procs:
             p.kill()
         self.hlist.killall()

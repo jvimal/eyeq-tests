@@ -65,6 +65,7 @@ class Udp(Expt):
         self.procs.append(client)
 
     def stop(self):
+        self.hlist.copy("l1", self.opts("dir"))
         for p in self.procs:
             p.kill()
         self.hlist.killall()
