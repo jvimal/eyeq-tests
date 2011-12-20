@@ -51,6 +51,11 @@ parser.add_argument('--without-vq',
                     help="Do expt without VQ",
                     default=False)
 
+parser.add_argument("--profile",
+                    dest="profile",
+                    help="Directory to store profile data.  Omit if you don't want to profile",
+                    default=None)
+
 args = parser.parse_args()
 
 if int(args.timeout) <= 10:
@@ -107,8 +112,13 @@ class RxOverhead(Expt):
             client = iperf.start_client(h2.addr)
             self.procs.append(client)
             self.log("client %d" % i)
+        if self.opts("profile"):
+            h1.start_profile(dir=self.opts("profile"))
+        self.h1 = h1
 
     def stop(self):
+        if self.opts("profile"):
+            self.h1.stop_profile(dir=self.opts("profile"))
         self.hlist.killall()
         self.hlist.remove_tenants()
         for p in self.procs:
@@ -180,6 +190,7 @@ if not args.without_vq:
             'rate': args.rate,
             't': args.t,
             'timeout': args.timeout,
+            'profile': args.profile,
             }).run()
 else:
     RxOverhead2({
@@ -188,4 +199,5 @@ else:
             'rate': args.rate,
             't': args.t,
             'timeout': args.timeout,
+            'profile': args.profile,
             }).run()

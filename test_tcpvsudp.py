@@ -37,6 +37,8 @@ class TcpVsUdp(Expt):
             #h3.create_udp_tenant(server_ports=[5002], tid=2)
             h1.create_ip_tenant(tid=1)
             h1.create_ip_tenant(tid=2)
+            # Set the weight for TCP tenant.  UDP's weight is 1
+            h1.perfiso_set_vq_weight(vq=1, weight=self.opts("wtcp"))
 
             h2.create_ip_tenant(tid=1)
             for hi in hlist_udp.lst:

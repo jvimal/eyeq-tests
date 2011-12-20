@@ -59,6 +59,11 @@ parser.add_argument('--timeout',
                     help="Timeout for perfiso token bucket (in nano seconds).",
                     default=str(1000*1000))
 
+parser.add_argument("--profile",
+                    dest="profile",
+                    help="Directory to store profile data.  Omit if you don't want to profile",
+                    default=None)
+
 args = parser.parse_args()
 
 if int(args.timeout) <= 1000:
@@ -89,6 +94,7 @@ class TxOverhead(Expt):
         self.hlist = hlist
         hlist.rmmod()
         hlist.remove_qdiscs()
+        hlist.configure_rps()
         n = self.opts('n')
         hlist.prepare_iface()
 
@@ -99,7 +105,12 @@ class TxOverhead(Expt):
             hlist.perfiso_set("ISO_RFAIR_INITIAL", self.opts('rate'))
             hlist.perfiso_set("ISO_TOKENBUCKET_TIMEOUT_NS", self.opts('timeout'))
             for i in xrange(n):
-                hlist.create_ip_tenant(i+1)
+                #hlist.create_ip_tenant(i+1)
+                ip = h1.get_tenant_ip(i+1)
+                h1.perfiso_create_txc(ip)
+                h1.tenants.append(i+1)
+                h1.cmd("ifconfig br0:%d %s" % (i+1, ip))
+                h2.create_ip_tenant(i+1)
         else:
             self.configure_qdisc(h1)
             for i in xrange(n):
@@ -136,8 +147,13 @@ class TxOverhead(Expt):
                            '-t': self.opts('t')})
             client = iperf.start_client(h1.addr)
             self.procs.append(client)
+        if self.opts("profile"):
+            h1.start_profile(dir=self.opts("profile"))
+        self.h1 = h1
 
     def stop(self):
+        if self.opts("profile"):
+            self.h1.stop_profile(dir=self.opts("profile"))
         self.hlist.remove_tenants()
         self.hlist.killall()
         for p in self.procs:
@@ -151,4 +167,5 @@ TxOverhead({
         'rl': args.rl,
         'timeout': args.timeout,
         'P': args.parallel,
+        'profile': args.profile,
         }).run()

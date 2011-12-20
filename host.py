@@ -145,8 +145,7 @@ class Host(object):
         self.perfiso_assoc_txc_vq(ip, ip)
         self.perfiso_set_vq_weight(ip, weight)
         # Configure an alias for the bridge interface
-        dev = self.get_10g_dev()
-        self.cmd("ifconfig br0:%d %s" % (tid, self.get_tenant_ip(tid)))
+        self.cmd("ifconfig br0:%d %s" % (tid, ip))
 
     def create_tcp_tenant(self, server_ports=[], tid=1, weight=1):
         self.create_service_tenant("tcp", server_ports, tid, weight)
@@ -198,8 +197,8 @@ class Host(object):
         # For iptables/ebtables mark based tenants, use this
         # self.ipt_ebt_flush()
         # This is for IP based tenants
-        for tid in self.tenants:
-            self.cmd("ifconfig br0:%d down" % tid)
+        #for tid in self.tenants:
+        self.cmd("for i in {1..%d}; do ifconfig br0:$i down; done" % len(self.tenants))
         self.remove_bridge()
 
     def configure_rps(self):
@@ -244,3 +243,16 @@ class Host(object):
 
     def hostname(self):
         return socket.gethostbyaddr(self.addr)[0]
+
+    def start_profile(self, dir="/tmp"):
+        dir = os.path.join(os.path.abspath(dir), "profile")
+        c = "mkdir -p %s; export SESSION_DIR=%s;" % (dir, dir)
+        c += "opcontrol --reset; opcontrol --start-daemon; opcontrol --start;"
+        self.cmd(c)
+
+    def stop_profile(self, dir="/tmp"):
+        dir = os.path.join(os.path.abspath(dir), "profile")
+        c = "export SESSION_DIR=%s; opcontrol --stop; opcontrol --dump;" % dir
+        c += "opcontrol --save profile;"
+        c += "opcontrol --deinit; killall -9 oprofiled; opcontrol --deinit;"
+        self.cmd(c)

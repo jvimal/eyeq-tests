@@ -48,6 +48,11 @@ parser.add_argument('--time', '-t',
                     help="Time to run expt",
                     default=120)
 
+parser.add_argument('--wtcp',
+                    dest="wtcp",
+                    help="For the tcp vs udp test, weight of the TCP flow.",
+                    default="1")
+
 args = parser.parse_args()
 
 def indent(s, depth=1, char='\t'):
@@ -82,7 +87,7 @@ from test_udp import Udp
 scen = Scenarios()
 scen.add("tcp2vs32", Tcp2Vs32(t=args.time, enabled=args.enabled, dir=args.dir))
 scen.add("tcpvsudp", TcpVsUdp(t=args.time, enabled=args.enabled,
-                              P=args.P, n=args.n, dir=args.dir))
+                              P=args.P, n=args.n, dir=args.dir, wtcp=args.wtcp))
 scen.add("udp", Udp(t=args.time, enabled=args.enabled, P=args.P, dir=args.dir))
 
 if args.list:
