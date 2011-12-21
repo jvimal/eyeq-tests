@@ -110,7 +110,10 @@ class TxOverhead(Expt):
                 h1.perfiso_create_txc(ip)
                 h1.tenants.append(i+1)
                 h1.cmd("ifconfig br0:%d %s" % (i+1, ip))
-                h2.create_ip_tenant(i+1)
+                #h2.create_ip_tenant(i+1)
+                h2.perfiso_create_txc(h2.get_tenant_ip(i+1))
+                h2.tenants.append(i+1)
+                h2.cmd("ifconfig br0:%d %s" % (i+1, h2.get_tenant_ip(i+1)))
         else:
             self.configure_qdisc(h1)
             for i in xrange(n):
