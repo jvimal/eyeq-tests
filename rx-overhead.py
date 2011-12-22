@@ -83,15 +83,7 @@ class RxOverhead(Expt):
         for i in xrange(n):
             hlist.create_ip_tenant(i+1)
 
-        self.log("Starting CPU/bandwidth monitors")
-        # Start monitors
-        m = multiprocessing.Process(target=monitor_cpu, args=("%s/cpu.txt" % self.opts('dir'),))
-        self.start_monitor(m)
-        m = multiprocessing.Process(target=monitor_bw, args=("%s/net.txt" % self.opts('dir'),))
-        self.start_monitor(m)
-        m = multiprocessing.Process(target=monitor_perf,
-                                    args=("%s/perf.txt" % self.opts('dir'), self.opts('t')))
-        self.start_monitor(m)
+        self.start_monitors(self.opts('dir'))
 
         self.log("Starting %d iperfs" % n)
         # Start iperfs servers
@@ -137,34 +129,29 @@ class RxOverhead2(Expt):
         n = self.opts('n')
 
         hlist.prepare_iface()
+
+        # Insert the module only in the second host
         h2.insmod()
         h2.perfiso_set("ISO_MAX_TX_RATE", self.opts("rate"))
+        h2.perfiso_set("ISO_RFAIR_INITIAL", self.opts('rate'))
 
         # Create vq class
-        for i in xrange(1):
-            h2.create_ip_tenant(i+1)
+        # First host doesn't have module loaded
+        ip = h2.get_10g_ip()
+        h2.perfiso_create_txc(ip)
 
-        self.log("Starting CPU/bandwidth monitors")
-        # Start monitors
-        m = multiprocessing.Process(target=monitor_cpu, args=("%s/cpu.txt" % self.opts('dir'),))
-        self.start_monitor(m)
-        m = multiprocessing.Process(target=monitor_bw, args=("%s/net.txt" % self.opts('dir'),))
-        self.start_monitor(m)
-        m = multiprocessing.Process(target=monitor_perf,
-                                    args=("%s/perf.txt" % self.opts('dir'), self.opts('t')))
-        self.start_monitor(m)
+        h1.start_monitors(self.opts('dir'))
+        if not self.opts("profile"):
+            h1.start_perf_monitor(self.opts("dir"), self.opts('t'))
 
         self.log("Starting %d iperfs" % n)
-
-        # Start iperfs servers
+        # Start same number of iperf servers
         for i in xrange(n):
             parallel = 4
             iperf = Iperf({'-p': 5001,
                            '-P': parallel})
             server = iperf.start_server(h1.addr)
             self.procs.append(server)
-            self.log("server %d" % i)
-            sleep(0.1)
 
         sleep(1)
         for i in xrange(n):
@@ -174,8 +161,6 @@ class RxOverhead2(Expt):
                            '-t': self.opts('t')})
             client = iperf.start_client(h2.addr)
             self.procs.append(client)
-            self.log("client %d" % i)
-            sleep(0.1)
 
     def stop(self):
         self.hlist.remove_tenants()

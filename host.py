@@ -222,9 +222,32 @@ class Host(object):
         cmd = "bwm-ng -t %s -o csv -u bits -T rate -C ',' > %s" % (interval_sec * 1000, path)
         return self.cmd_async(cmd)
 
+    def start_perf_monitor(self, dir="/tmp", time=30):
+        dir = os.path.abspath(dir)
+        path = os.path.join(dir, "perf.txt")
+        events = [
+            "instructions",
+            "cache-misses",
+            "branch-instructions",
+            "branch-misses",
+            "L1-dcache-loads",
+            "L1-dcache-load-misses",
+            "L1-dcache-stores",
+            "L1-dcache-store-misses",
+            "L1-dcache-prefetches",
+            "L1-dcache-prefetch-misses",
+            "L1-icache-loads",
+            "L1-icache-load-misses",
+            ]
+        # This command will use debug counters, so you can't run it when
+        # running oprofile
+        events = ','.join(events)
+        cmd = "(perf stat -e %s -a sleep %d) > %s 2>&1" % (events, time, path)
+        return self.cmd_async(cmd)
+
     def start_monitors(self, dir="/tmp"):
-        self.start_cpu_monitor(dir)
-        self.start_bw_monitor(dir)
+        return [self.start_cpu_monitor(dir),
+                self.start_bw_monitor(dir)]
 
     def copy(self, dest="l1", dir="/tmp"):
         dir = os.path.abspath(dir)
