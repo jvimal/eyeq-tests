@@ -8,6 +8,14 @@ import socket
 PI_MODULE = '/root/vimal/10g/perfiso_10g_linux/perfiso.ko'
 PI_MODULE = '/root/vimal/10g/modules/perfiso.ko'
 
+host_ips = map(lambda i: "10.0.1.%d" % i, range(1, 21))
+host_ips_exclude = ["10.0.1.9", "10.0.1.11", "10.0.1.12", "10.0.1.18"]
+for ip in host_ips_exclude:
+    host_ips.remove(ip)
+
+def pick_host_ip(i):
+    return host_ips[i]
+
 eth1 = 'eth1'
 
 PI_DEV = {
