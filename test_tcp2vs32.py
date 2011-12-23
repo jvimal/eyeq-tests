@@ -42,7 +42,7 @@ class Tcp2Vs32(Expt):
         # Start iperf servers
         for p in [5001, 5002]:
             iperf = Iperf({'-p': p})
-            server = iperf.start_server(h1.addr)
+            server = iperf.start_server(h1)
             self.procs.append(server)
 
         sleep(1)
@@ -53,7 +53,7 @@ class Tcp2Vs32(Expt):
                         '-P': 1})
         if self.opts("enabled"):
             client.opts["-c"] = h1.get_tenant_ip(1)
-        client = client.start_client(h2.addr)
+        client = client.start_client(h2)
         self.procs.append(client)
 
         # Start 32 TCP from h3 to h1
@@ -63,7 +63,7 @@ class Tcp2Vs32(Expt):
                         '-P': 32})
         if self.opts("enabled"):
             client.opts["-c"] = h1.get_tenant_ip(2)
-        client = client.start_client(h3.addr)
+        client = client.start_client(h3)
         self.procs.append(client)
 
     def stop(self):

@@ -43,7 +43,7 @@ class Udp(Expt):
         for p in [5001, 5002]:
             opts = {'-p': p, '-u': True}
             iperf = Iperf(opts)
-            server = iperf.start_server(h1.get_10g_ip())
+            server = iperf.start_server(h1)
             self.procs.append(server)
 
         # Start 32 UDP from h2 to h1
@@ -52,7 +52,7 @@ class Udp(Expt):
                         '-t': self.opts("t"),
                         '-b': '3G',
                         '-P': 32})
-        client = client.start_client(h2.get_10g_ip())
+        client = client.start_client(h2)
         self.procs.append(client)
 
         # Start 32 UDP from h3 to h1
@@ -61,7 +61,7 @@ class Udp(Expt):
                         '-t': self.opts("t"),
                         '-b': '3G',
                         '-P': 32})
-        client = client.start_client(h3.get_10g_ip())
+        client = client.start_client(h3)
         self.procs.append(client)
 
     def stop(self):

@@ -83,7 +83,7 @@ class RxOverhead(Expt):
         for i in xrange(n):
             hlist.create_ip_tenant(i+1)
 
-        self.start_monitors(self.opts('dir'))
+        h1.start_monitors(self.opts('dir'))
 
         self.log("Starting %d iperfs" % n)
         # Start iperfs servers
@@ -91,7 +91,7 @@ class RxOverhead(Expt):
             parallel = 4
             iperf = Iperf({'-p': 5001,
                            '-P': parallel})
-            server = iperf.start_server(h1.addr)
+            server = iperf.start_server(h1)
             self.procs.append(server)
             self.log("server %d" % i)
 
@@ -101,7 +101,7 @@ class RxOverhead(Expt):
                            '-P': parallel,
                            '-c': h1.get_tenant_ip(i+1),
                            '-t': self.opts('t')})
-            client = iperf.start_client(h2.addr)
+            client = iperf.start_client(h2)
             self.procs.append(client)
             self.log("client %d" % i)
         if self.opts("profile"):
@@ -150,7 +150,7 @@ class RxOverhead2(Expt):
             parallel = 4
             iperf = Iperf({'-p': 5001,
                            '-P': parallel})
-            server = iperf.start_server(h1.addr)
+            server = iperf.start_server(h1)
             self.procs.append(server)
 
         sleep(1)
@@ -159,7 +159,7 @@ class RxOverhead2(Expt):
                            '-P': parallel,
                            '-c': h1.get_10g_ip(),
                            '-t': self.opts('t')})
-            client = iperf.start_client(h2.addr)
+            client = iperf.start_client(h2)
             self.procs.append(client)
 
     def stop(self):

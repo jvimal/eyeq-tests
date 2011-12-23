@@ -143,7 +143,7 @@ class TxOverhead(Expt):
         parallel = self.opts("P")
         iperf = Iperf({'-p': 5001,
                        '-P': parallel})
-        server = iperf.start_server(h2.addr)
+        server = iperf.start_server(h2)
         self.procs.append(server)
 
         sleep(1)
@@ -154,7 +154,7 @@ class TxOverhead(Expt):
                            '-c': ip,
                            '-B': h1.get_tenant_ip(i+1),
                            '-t': self.opts('t')})
-            client = iperf.start_client(h1.addr)
+            client = iperf.start_client(h1, cpu=i)
             self.procs.append(client)
         if self.opts("profile"):
             h1.start_profile(dir=self.opts("profile"))

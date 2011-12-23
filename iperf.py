@@ -6,17 +6,19 @@ class Iperf:
     def __init__(self, opts):
         self.opts = opts
 
-    def start_server(self, host):
+    def start_server(self, host, cpu=None):
         cmd = "iperf -s -p %d" % (self.opts.get('-p', 5001))
         if self.opts.get('-u', False):
             cmd += " -u -l32k"
         if self.opts.get('-B', False):
             cmd += " -B %s " % self.opts.get('-B')
-        h = Host(host)
-        h.cmd_async(cmd)
+        if cpu is not None:
+            cpu = cpu % 8
+            cmd = "taskset -c %d %s" % (cpu, cmd)
+        host.cmd_async(cmd)
         return self
 
-    def start_client(self, host):
+    def start_client(self, host, cpu=None):
         server_ip = self.opts.get('-c', '')
         port = self.opts.get('-p', '')
         parallel = self.opts.get('-P', '')
@@ -27,8 +29,10 @@ class Iperf:
         if self.opts.get('-B', False):
             cmd += " -B %s " % self.opts.get('-B')
         cmd += " > /tmp/iperf-%s 2>&1" % server_ip
-        h = Host(host)
-        h.cmd_async(cmd)
+        if cpu is not None:
+            cpu = cpu % 8
+            cmd = "taskset -c %d %s" % (cpu, cmd)
+        host.cmd_async(cmd)
         return self
 
     def kill(self):

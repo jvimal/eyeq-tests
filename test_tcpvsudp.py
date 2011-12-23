@@ -53,7 +53,7 @@ class TcpVsUdp(Expt):
         self.procs = []
         # Start iperf servers
         iperf = Iperf({'-p': 5001})
-        server = iperf.start_server(h1.addr)
+        server = iperf.start_server(h1)
         self.procs.append(server)
 
         sleep(1)
@@ -65,7 +65,7 @@ class TcpVsUdp(Expt):
         if self.opts("enabled"):
             opts['-c'] = h1.get_tenant_ip(1)
         client = Iperf(opts)
-        client = client.start_client(h2.addr)
+        client = client.start_client(h2)
         self.procs.append(client)
 
         for hi in hlist_udp.lst:
@@ -78,7 +78,7 @@ class TcpVsUdp(Expt):
             if self.opts("enabled"):
                 opts['-c'] = h1.get_tenant_ip(2)
             client = Iperf(opts)
-            client = client.start_client(hi.addr)
+            client = client.start_client(hi)
             self.procs.append(client)
 
     def stop(self):
