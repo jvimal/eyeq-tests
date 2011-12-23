@@ -50,6 +50,8 @@ class Host(object):
         self.tenants = []
         # List of processes spawned async on this host
         self.procs = []
+        self.delay = False
+        self.delayed_cmds = []
 
     def get(self):
         ssh = Host._ssh_cache.get(self.addr, None)
@@ -61,9 +63,23 @@ class Host(object):
         return ssh
 
     def cmd(self, c):
-        ssh = self.get()
         self.log(c)
-        out = ssh.exec_command(c)[1].read()
+        if not self.delay:
+            ssh = self.get()
+            out = ssh.exec_command(c)[1].read()
+            return out
+        else:
+            self.delayed_cmds.append(c)
+        return None
+
+    def delayed_cmds_execute(self):
+        if len(self.delayed_cmds) == 0:
+            return None
+        self.delay = False
+        ssh = self.get()
+        cmds = ';'.join(self.delayed_cmds)
+        out = ssh.exec_command(cmds)[1].read()
+        self.delayed_cmds = []
         return out
 
     def cmd_async(self, c):
@@ -148,12 +164,14 @@ class Host(object):
     def create_ip_tenant(self, tid=1, weight=1):
         ip = self.get_tenant_ip(tid)
         self.tenants.append(tid)
+        self.delay = True
         self.perfiso_create_txc(ip)
         self.perfiso_create_vq(ip)
         self.perfiso_assoc_txc_vq(ip, ip)
         self.perfiso_set_vq_weight(ip, weight)
         # Configure an alias for the bridge interface
         self.cmd("ifconfig br0:%d %s" % (tid, ip))
+        self.delayed_cmds_execute()
 
     def create_tcp_tenant(self, server_ports=[], tid=1, weight=1):
         self.create_service_tenant("tcp", server_ports, tid, weight)

@@ -75,6 +75,7 @@ class TxOverhead(Expt):
         dev = host.get_10g_dev()
         rate = self.opts("rate")
         n = self.opts("n")
+        host.delay = True
         host.cmd("tc qdisc del dev %s root" % dev)
         host.cmd("tc qdisc add dev %s root handle 1: htb default 1000" % dev)
         for i in xrange(n):
@@ -86,6 +87,7 @@ class TxOverhead(Expt):
             c += " parent 1: protocol ip prio 1 "
             c += " u32 match ip src %s classid 1:%d" % (host.get_tenant_ip(i+1), i+1)
             host.cmd(c)
+        host.delayed_cmds_execute()
 
     def start(self):
         h1 = Host("10.0.1.1")
@@ -104,6 +106,8 @@ class TxOverhead(Expt):
             hlist.perfiso_set("ISO_MAX_TX_RATE", self.opts('rate'))
             hlist.perfiso_set("ISO_RFAIR_INITIAL", self.opts('rate'))
             hlist.perfiso_set("ISO_TOKENBUCKET_TIMEOUT_NS", self.opts('timeout'))
+            h1.delay = True
+            h2.delay = True
             for i in xrange(n):
                 #hlist.create_ip_tenant(i+1)
                 ip = h1.get_tenant_ip(i+1)
@@ -111,9 +115,11 @@ class TxOverhead(Expt):
                 h1.tenants.append(i+1)
                 h1.cmd("ifconfig br0:%d %s" % (i+1, ip))
                 #h2.create_ip_tenant(i+1)
+                h2.delay = True
                 h2.perfiso_create_txc(h2.get_tenant_ip(i+1))
                 h2.tenants.append(i+1)
                 h2.cmd("ifconfig br0:%d %s" % (i+1, h2.get_tenant_ip(i+1)))
+            hlist.delayed_cmds_execute()
         else:
             self.configure_qdisc(h1)
             for i in xrange(n):
@@ -128,9 +134,9 @@ class TxOverhead(Expt):
         self.start_monitor(m)
         m = multiprocessing.Process(target=monitor_bw, args=("%s/net.txt" % self.opts('dir'),))
         self.start_monitor(m)
-        m = multiprocessing.Process(target=monitor_perf,
-                                    args=("%s/perf.txt" % self.opts('dir'), self.opts('t')))
-        self.start_monitor(m)
+        #m = multiprocessing.Process(target=monitor_perf,
+        #                            args=("%s/perf.txt" % self.opts('dir'), self.opts('t')))
+        #self.start_monitor(m)
 
         self.log("Starting %d iperfs" % n)
         # Start iperfs servers
