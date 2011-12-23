@@ -65,9 +65,8 @@ bar_width=1
 bar_group=3
 colours = blue_colours
 
-def vary_number():
+def vary_number(timeout=1000*1000):
     rate = 100
-    timeout = 1000*1000
     xlabels = []
     fig = plt.figure()
     for i, rl in enumerate(rls):
@@ -82,7 +81,7 @@ def vary_number():
         plt.xticks(xs, xlabels)
     plt.grid()
     plt.legend(loc="upper left")
-    plt.title("Vary # RLs for rate=100Mbps")
+    plt.title("Vary # RLs for rate=100Mbps (tmout=%.2fms)" % (timeout / 1e6))
     return
 
 def vary_rate(timeout=1000*1000):
@@ -127,7 +126,7 @@ def vary_connections():
     plt.title("CPU usage for different number of parallel TCP streams")
     return
 
-vary_number()
+vary_number(timeout=1000*1000)
 #vary_rate()
 #vary_rate(3000*1000)
 #vary_connections()
