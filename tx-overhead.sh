@@ -1,6 +1,13 @@
 
-dir=exptdata/tx/
+dir=exptdata/`date +%b%d-%H:%M`/tx/
 time=120
+
+ctrlc() {
+	killall -9 python
+	exit
+}
+
+trap ctrlc SIGINT
 
 for rl in htb perfiso; do
 	if [ $rl == "htb" ]; then
