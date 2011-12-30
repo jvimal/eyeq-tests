@@ -77,6 +77,7 @@ class RxOverhead(Expt):
         hlist.prepare_iface()
         # VQ drain rate
         h1.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", self.opts('rate'))
+        h1.perfiso_set("ISO_VQ_UPDATE_INTERVAL_US", "25")
 
         # Create vq class
         self.log("Creating vq classes")
