@@ -2,6 +2,8 @@
 dir=exptdata/`date +%b%d-%H:%M`/rx/
 time=120
 
+mkdir -p $dir
+
 ctrlc() {
 	killall -9 python
 	exit
