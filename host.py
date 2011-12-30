@@ -7,6 +7,7 @@ import socket
 
 PI_MODULE = '/root/vimal/10g/perfiso_10g_linux/perfiso.ko'
 PI_MODULE = '/root/vimal/10g/modules/perfiso.ko'
+PI_MODULE = '/root/vimal/exports/perfiso.ko'
 
 host_ips = map(lambda i: "10.0.1.%d" % i, range(1, 21))
 host_ips_exclude = ["10.0.1.9", "10.0.1.11", "10.0.1.12", "10.0.1.18"]
@@ -83,9 +84,23 @@ class Host(object):
         return out
 
     def cmd_async(self, c):
-        ssh = self.get()
         self.log(c)
-        out = ssh.exec_command(c)
+        if not self.delay:
+            ssh = self.get()
+            out = ssh.exec_command(c)
+            return out
+        else:
+            self.delayed_cmds.append(c)
+        return None
+
+    def delayed_async_cmds_execute(self):
+        if len(self.delayed_cmds) == 0:
+            return None
+        self.delay = False
+        ssh = self.get()
+        cmds = ';'.join(self.delayed_cmds)
+        out = ssh.exec_command(cmds)[1]
+        self.delayed_cmds = []
         return out
 
     def log(self, c):
@@ -211,10 +226,10 @@ class Host(object):
             self.cmd(ebt)
         return
 
-    def killall(self):
+    def killall(self, extra=""):
         for p in self.procs:
             p.kill()
-        self.cmd("killall -9 ssh iperf top bwm-ng")
+        self.cmd("killall -9 ssh iperf top bwm-ng memcached %s" % extra)
 
     def ipt_ebt_flush(self):
         self.cmd("iptables -F; ebtables -t broute -F")
@@ -305,3 +320,16 @@ class Host(object):
         c += "opcontrol --save profile;"
         c += "opcontrol --deinit; killall -9 oprofiled; opcontrol --deinit;"
         self.cmd(c)
+
+    def start_memcached(self):
+        self.stop_memcached()
+        c = "ulimit -n unlimited; memcached -t 8 -b 10241024 -m 8192 -v -c 1024000 -u nobody"
+        proc = self.cmd_async(c)
+        self.procs.append(proc)
+        return proc
+
+    def stop_memcached(self):
+        self.cmd("killall -9 memcached")
+
+    def disable_syncookies(self):
+        self.cmd("sysctl -w net.ipv4.tcp_syncookies=0")
