@@ -32,6 +32,13 @@ parser.add_argument('-n',
                     help="Number of rate limiters.",
                     default=1)
 
+parser.add_argument('-m',
+                    dest="m",
+                    action="store",
+                    type=int,
+                    help="Number of iperfs per tenant.",
+                    default=1)
+
 parser.add_argument('-P',
                     dest="parallel",
                     action="store",
@@ -147,15 +154,19 @@ class TxOverhead(Expt):
         self.procs.append(server)
 
         sleep(1)
+        cpu = -1
+        m = self.opts("m")
         for i in xrange(n):
             ip = h2.get_tenant_ip(i+1)
-            iperf = Iperf({'-p': 5001,
-                           '-P': parallel,
-                           '-c': ip,
-                           '-B': h1.get_tenant_ip(i+1),
-                           '-t': self.opts('t')})
-            client = iperf.start_client(h1, cpu=i)
-            self.procs.append(client)
+            for j in xrange(m):
+                cpu += 1
+                iperf = Iperf({'-p': 5001,
+                               '-P': parallel,
+                               '-c': ip,
+                               '-B': h1.get_tenant_ip(i+1),
+                               '-t': self.opts('t')})
+                client = iperf.start_client(h1, cpu=cpu)
+                self.procs.append(client)
         if self.opts("profile"):
             h1.start_profile(dir=self.opts("profile"))
         self.h1 = h1
@@ -170,6 +181,7 @@ class TxOverhead(Expt):
 
 TxOverhead({
         'n': args.n,
+        'm': args.m,
         'dir': args.dir,
         'rate': args.rate,
         't': args.t,
