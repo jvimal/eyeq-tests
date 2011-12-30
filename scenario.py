@@ -53,6 +53,12 @@ parser.add_argument('--wtcp',
                     help="For the tcp vs udp test, weight of the TCP flow.",
                     default="1")
 
+parser.add_argument('--case',
+                    dest="case",
+                    type=int,
+                    help="For the memcached test, select case to run.",
+                    default=1)
+
 args = parser.parse_args()
 
 def indent(s, depth=1, char='\t'):
@@ -83,12 +89,14 @@ class Scenarios:
 from test_tcp2vs32 import Tcp2Vs32
 from test_tcpvsudp import TcpVsUdp
 from test_udp import Udp
+from test_memcached import Memcached
 
 scen = Scenarios()
 scen.add("tcp2vs32", Tcp2Vs32(t=args.time, enabled=args.enabled, dir=args.dir))
 scen.add("tcpvsudp", TcpVsUdp(t=args.time, enabled=args.enabled,
                               P=args.P, n=args.n, dir=args.dir, wtcp=args.wtcp))
 scen.add("udp", Udp(t=args.time, enabled=args.enabled, P=args.P, dir=args.dir))
+scen.add("memcached", Memcached(t=args.time, dir=args.dir, case=args.case))
 
 if args.list:
     scen.list()
