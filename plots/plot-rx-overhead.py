@@ -5,7 +5,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--cols',
                     help="Columns to include for CPU usage",
                     action="store",
-                    default='sirq,hirq',
+                    default='user,sys,sirq,hirq',
                     dest="cols")
 
 parser.add_argument('--maxy',
@@ -50,7 +50,7 @@ def yvalue2(rate, without=False, num=1):
     data = parse_rate_usage(os.path.join(dir, "net.txt"),
                             ifaces=["eth2"], dir="rx", divider=(1 << 20))
     data = avg(data["eth2"][30:])
-    perf = perf_summary(os.path.join(dir, "perf.txt"))
+    #perf = perf_summary(os.path.join(dir, "perf.txt"))
     print dir, data
     #pprint(perf)
     return data
@@ -92,5 +92,5 @@ def plot_without(without=False):
 
 # This negative variable naming is a pain, I know! ;)
 plot_without(False)
-plot_without(True)
+#plot_without(True)
 plt.show()
