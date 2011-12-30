@@ -75,13 +75,14 @@ def vary_number(timeout=1000*1000):
         xlabels = []
         for index, num in enumerate([8, 16, 32, 64, 128]):
             xs.append(3*index + i)
-            ys.append(yvalue(rl, rate, num, timeout=timeout, cols="sirq"))
+            ys.append(yvalue(rl, rate, num, timeout=timeout, cols="user,sirq,sys,hirq"))
             xlabels.append(str(num))
         plt.bar(xs, ys, bar_width, label=rl, color=colours[i])
         plt.xticks(xs, xlabels)
     plt.grid()
     plt.legend(loc="upper left")
     plt.title("Vary # RLs for rate=100Mbps (tmout=%.2fms)" % (timeout / 1e6))
+    plt.ylim((0,15))
     return
 
 def vary_rate(timeout=1000*1000):
@@ -102,11 +103,12 @@ def vary_rate(timeout=1000*1000):
     plt.grid()
     plt.legend(loc="upper left")
     plt.title("Vary rates for different RLs and perfiso timeout=%dms" % (timeout/1e6))
+    plt.ylim((0,15))
     return
 
 def vary_connections():
     rates = [9000]
-    Ps = [4, 64, 256]
+    Ps = [4, 64, 128]
     fig = plt.figure()
     bar_width = 1
     for i, rl in enumerate(rls):
@@ -123,7 +125,8 @@ def vary_connections():
         plt.xticks(xs, xlabels)
     plt.grid()
     plt.legend(loc="upper left")
-    plt.title("CPU usage for different number of parallel TCP streams")
+    plt.title("CPU usage for different number of parallel iperf sessions (bound to diff CPUs)")
+    plt.ylim((0,30))
     return
 
 vary_number(timeout=1000*1000)
