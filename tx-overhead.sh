@@ -12,7 +12,7 @@ trap ctrlc SIGINT
 for rl in htb perfiso; do
 	timeouts=1000000
 
-	for m in 4 64 256; do
+	for m in 4 16 32 64 128; do
 		python tests/tx-overhead.py --rate 9000 --dir $dir/rl$rl-r9000-P$P --rl $rl -m $m
 	done
 
