@@ -149,7 +149,12 @@ class Host(object):
         params = "iso_param_dev=%s" % self.get_10g_dev()
         self.cmd("insmod %s %s" % (mod, params))
 
-    def prepare_iface(self, iface=None, ip=None):
+    def prepare_iface(self, iface=None, ip=None, direct=True):
+        if direct:
+            # No need for bridge
+            dev = self.get_10g_dev()
+            self.cmd("ifdown %s; ifup %s" % (dev, dev))
+            return
         if iface is None:
             iface = self.get_10g_dev()
         if ip is None:
@@ -162,7 +167,9 @@ class Host(object):
                 "ifconfig br0 %s up" % (ip)]
         self.cmd('; '.join(cmds))
 
-    def remove_bridge(self):
+    def remove_bridge(self, direct=True):
+        if direct:
+            return
         iface = self.get_10g_dev()
         ip = self.get_10g_ip()
         cmds = ["ifconfig br0 0 down",
@@ -176,7 +183,7 @@ class Host(object):
 
     # Tenant creation/deletion.  IP tenant is the cleanest, and
     # closest to a mac-addr like VM tenant
-    def create_ip_tenant(self, tid=1, weight=1):
+    def create_ip_tenant(self, tid=1, weight=1, direct=True):
         ip = self.get_tenant_ip(tid)
         self.tenants.append(tid)
         self.delay = True
@@ -185,7 +192,10 @@ class Host(object):
         self.perfiso_assoc_txc_vq(ip, ip)
         self.perfiso_set_vq_weight(ip, weight)
         # Configure an alias for the bridge interface
-        self.cmd("ifconfig br0:%d %s" % (tid, ip))
+        if direct:
+            self.cmd("ifconfig %s:%d %s" % (self.get_10g_dev(), tid, ip))
+        else:
+            self.cmd("ifconfig br0:%d %s" % (tid, ip))
         self.delayed_cmds_execute()
 
     def create_tcp_tenant(self, server_ports=[], tid=1, weight=1):
@@ -234,12 +244,15 @@ class Host(object):
     def ipt_ebt_flush(self):
         self.cmd("iptables -F; ebtables -t broute -F")
 
-    def remove_tenants(self):
+    def remove_tenants(self, direct=True):
         # For iptables/ebtables mark based tenants, use this
         # self.ipt_ebt_flush()
         # This is for IP based tenants
         #for tid in self.tenants:
-        self.cmd("for i in {1..%d}; do ifconfig br0:$i down; done" % len(self.tenants))
+        dev = "br0"
+        if direct:
+            dev = self.get_10g_dev()
+        self.cmd("for i in {1..%d}; do ifconfig %s:$i down; done" % (len(self.tenants), dev))
         self.remove_bridge()
 
     def configure_rps(self):

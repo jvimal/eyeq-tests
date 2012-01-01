@@ -106,7 +106,7 @@ class TxOverhead(Expt):
         hlist.configure_rps()
         n = self.opts('n')
         hlist.prepare_iface()
-
+        direct=True
         if self.opts('rl') == "perfiso":
             hlist.insmod()
             hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", "11000")
@@ -120,12 +120,18 @@ class TxOverhead(Expt):
                 ip = h1.get_tenant_ip(i+1)
                 h1.perfiso_create_txc(ip)
                 h1.tenants.append(i+1)
-                h1.cmd("ifconfig br0:%d %s" % (i+1, ip))
+                if direct:
+                    h1.cmd("ifconfig %s:%d %s" % (h1.get_10g_dev(), i+1, ip))
+                else:
+                    h1.cmd("ifconfig br0:%d %s" % (i+1, ip))
                 #h2.create_ip_tenant(i+1)
                 h2.delay = True
                 h2.perfiso_create_txc(h2.get_tenant_ip(i+1))
                 h2.tenants.append(i+1)
-                h2.cmd("ifconfig br0:%d %s" % (i+1, h2.get_tenant_ip(i+1)))
+                if direct:
+                    h2.cmd("ifconfig %s:%d %s" % (h2.get_10g_dev(), i+1, h2.get_tenant_ip(i+1)))
+                else:
+                    h2.cmd("ifconfig br0:%d %s" % (i+1, h2.get_tenant_ip(i+1)))
             hlist.delayed_cmds_execute()
         else:
             self.configure_qdisc(h1)
