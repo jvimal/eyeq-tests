@@ -47,9 +47,9 @@ class Memcached(Expt):
 
         dir = os.path.join(self.opts("dir"), out)
         cmd = "mkdir -p %s; " % dir
-        cmd += "cd ~/vimal/libmemcached-1.0.2/clients; "
+        #cmd += "cd ~/vimal/libmemcached-1.0.2/clients; "
         time = int(self.opts("t")) - 5
-        cmd += "./memaslap -s %s:11211 -S 1s -t %ss -n 4 -c 128 -T 8 -B -F ~/vimal/exports/memaslap.cnf" % (h1.get_10g_ip(), time)
+        cmd += "memaslap -s %s:11211 -S 1s -t %ss -n 4 -c 128 -T 8 -B -F ~/vimal/exports/memaslap.cnf" % (h1.get_10g_ip(), time)
         cmd += " > %s" % (os.path.join(dir, "memaslap.txt"))
         h2.cmd_async(cmd)
         h2.start_monitors(dir)
@@ -72,9 +72,9 @@ class Memcached(Expt):
 
         dir = os.path.join(self.opts("dir"), out)
         cmd = "mkdir -p %s; " % dir
-        cmd += "cd ~/vimal/libmemcached-1.0.2/clients; "
+        #cmd += "cd ~/vimal/libmemcached-1.0.2/clients; "
         time = int(self.opts("t")) - 5
-        cmd += "./memaslap -s %s:11211 -S 1s -t %ss -n 4 -c 128 -T 8 -B -F ~/vimal/exports/memaslap.cnf" % (h1.get_tenant_ip(1), time)
+        cmd += "memaslap -s %s:11211 -S 1s -t %ss -n 4 -c 128 -T 8 -B -F ~/vimal/exports/memaslap.cnf" % (h1.get_tenant_ip(1), time)
         cmd += " > %s" % (os.path.join(dir, "memaslap.txt"))
         h2.cmd_async(cmd)
         h2.start_monitors(dir)
@@ -124,4 +124,3 @@ class Memcached(Expt):
             p.kill()
         self.hlist.killall("memaslap")
         self.hlist.remove_tenants()
-
