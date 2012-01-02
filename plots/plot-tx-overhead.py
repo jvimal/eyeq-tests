@@ -108,7 +108,7 @@ def vary_rate(timeout=1000*1000):
 
 def vary_connections():
     rates = [9000]
-    Ps = [4, 64, 128]
+    Ps = [4, 16, 32, 64, 128]
     fig = plt.figure()
     bar_width = 1
     for i, rl in enumerate(rls):
@@ -130,7 +130,7 @@ def vary_connections():
     return
 
 vary_number(timeout=1000*1000)
-#vary_rate()
-#vary_rate(3000*1000)
-#vary_connections()
+vary_rate()
+vary_rate(1000*1000)
+vary_connections()
 plt.show()
