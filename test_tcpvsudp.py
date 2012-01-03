@@ -6,15 +6,16 @@ from time import sleep
 class TcpVsUdp(Expt):
     def __init__(self, **kwargs):
         Expt.__init__(self, kwargs)
-        self.desc = """Test fairness between 1 TCP and 32 UDP sessions"""
+        self.desc = """Test fairness between 1 TCP and UDP on multiple hosts"""
 
     def start(self):
         h1 = Host("10.0.1.1")
         h2 = Host("10.0.1.2")
         hlist = HostList(h1, h2)
         hlist_udp = HostList()
-        for i in xrange(3, 3+self.opts("n")+1):
-            hi = Host("10.0.1.%d" % i)
+        for i in xrange(2, 2+self.opts("n")):
+            ip = pick_host_ip(i)
+            hi = Host(ip)
             hlist.append(hi)
             hlist_udp.append(hi)
 
@@ -26,7 +27,6 @@ class TcpVsUdp(Expt):
             hlist.remove_bridge()
 
         hlist.rmmod()
-        hlist.ipt_ebt_flush()
         if self.opts("enabled"):
             hlist.insmod()
             self.log("Creating two tenants")
@@ -46,8 +46,9 @@ class TcpVsUdp(Expt):
 
         if self.opts("enabled"):
             hlist.perfiso_set("IsoAutoGenerateFeedback", "1")
-            hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", 8700)
+            hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", 8500)
             hlist.perfiso_set("ISO_VQ_UPDATE_INTERVAL_US", 25)
+            hlist.perfiso_set("ISO_RFAIR_INITIAL", 9000)
         hlist.start_monitors(self.opts("dir"))
 
         self.procs = []
@@ -83,8 +84,8 @@ class TcpVsUdp(Expt):
             self.procs.append(client)
 
     def stop(self):
+        self.hlist.killall()
         self.hlist.remove_tenants()
         self.hlist.copy("l1", self.opts("dir"))
         for p in self.procs:
             p.kill()
-        self.hlist.killall()
