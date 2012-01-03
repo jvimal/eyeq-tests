@@ -4,6 +4,7 @@ from subprocess import Popen
 import termcolor as T
 import os
 import socket
+from time import sleep
 
 PI_MODULE = '/root/vimal/10g/perfiso_10g_linux/perfiso.ko'
 PI_MODULE = '/root/vimal/10g/modules/perfiso.ko'
@@ -43,6 +44,8 @@ class HostList(object):
             return object.__getattribute__(self, name)
         except AttributeError:
             ret = lambda *args: map(lambda h: h.__getattribute__(name)(*args), self.lst)
+            if name == "prepare_iface":
+                sleep(1)
             return ret
 
 class Host(object):
