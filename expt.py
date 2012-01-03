@@ -30,7 +30,7 @@ class Expt(object):
         pass
 
     def opts(self, name):
-        return self._opts.get(name, '')
+        return self._opts.get(name, None)
 
     def run(self):
         try:
