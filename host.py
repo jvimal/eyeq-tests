@@ -167,7 +167,7 @@ class Host(object):
         if direct:
             # No need for bridge
             dev = self.get_10g_dev()
-            self.cmd("ifdown %s; ifup %s" % (dev, dev))
+            self.cmd_async("ifdown %s; ifup %s" % (dev, dev))
             return
         if iface is None:
             iface = self.get_10g_dev()
