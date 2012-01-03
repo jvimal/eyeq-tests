@@ -11,7 +11,8 @@ ctrlc() {
 
 trap ctrlc SIGINT
 
-for case in {1..5}; do
+#for case in {1..5}; do
+for case in 1 3 4 5; do
 	python tests/scenario.py --run memcached --case $case --dir $dir --time $time
 done
 
