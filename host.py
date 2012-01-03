@@ -18,6 +18,12 @@ for ip in host_ips_exclude:
 def pick_host_ip(i):
     return host_ips[i]
 
+def pick_10g_ip(i):
+    return host_ips[i].replace("10.0.1", "192.168.2")
+
+def pick_host_name(i):
+    return host_ips[i].replace("10.0.1.", "l")
+
 eth1 = 'eth1'
 
 PI_DEV = {
