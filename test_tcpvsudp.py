@@ -74,6 +74,7 @@ class TcpVsUdp(Expt):
                     '-c': h1.get_10g_ip(),
                     '-t': self.opts("t"),
                     '-b': '3G',
+                    'start_udp': self.opts("start_udp"),
                     '-P': self.opts("P")}
             if self.opts("enabled"):
                 opts['-c'] = h1.get_tenant_ip(2)

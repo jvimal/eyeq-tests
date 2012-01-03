@@ -59,6 +59,10 @@ parser.add_argument('--case',
                     help="For the memcached test, select case to run.",
                     default=1)
 
+parser.add_argument('--start-udp',
+                    dest="start_udp",
+                    help="For the UDP tests, select time to start UDP flow")
+
 args = parser.parse_args()
 
 def indent(s, depth=1, char='\t'):
@@ -94,8 +98,10 @@ from test_memcached import Memcached
 scen = Scenarios()
 scen.add("tcp2vs32", Tcp2Vs32(t=args.time, enabled=args.enabled, dir=args.dir))
 scen.add("tcpvsudp", TcpVsUdp(t=args.time, enabled=args.enabled,
-                              P=args.P, n=args.n, dir=args.dir, wtcp=args.wtcp))
-scen.add("udp", Udp(t=args.time, enabled=args.enabled, P=args.P, dir=args.dir))
+                              P=args.P, n=args.n, dir=args.dir, wtcp=args.wtcp,
+                              start_udp=args.start_udp))
+scen.add("udp", Udp(t=args.time, enabled=args.enabled,
+                    P=args.P, dir=args.dir, start_udp=args.start_udp))
 scen.add("memcached", Memcached(t=args.time, dir=args.dir, case=args.case))
 
 if args.list:

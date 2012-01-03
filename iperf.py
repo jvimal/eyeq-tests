@@ -32,6 +32,8 @@ class Iperf:
         if cpu is not None:
             cpu = cpu % 8
             cmd = "taskset -c %d %s" % (cpu, cmd)
+        if self.opts.get('start_udp', None):
+            cmd = "sleep %s; " % self.opts.get('start_udp') + cmd
         host.cmd_async(cmd)
         return self
 
