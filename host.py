@@ -266,7 +266,8 @@ class Host(object):
         dev = "br0"
         if direct:
             dev = self.get_10g_dev()
-        self.cmd("for i in {1..%d}; do ifconfig %s:$i down; done" % (len(self.tenants), dev))
+        filter_cmd = "ifconfig | egrep -o '%s:[0-9]+'" % dev
+        self.cmd("for iface in `%s`; do ifconfig $iface down; done" % (filter_cmd))
         self.remove_bridge()
 
     def configure_rps(self):
