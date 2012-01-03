@@ -140,7 +140,7 @@ class Host(object):
         self.cmd(c)
 
     def perfiso_set_vq_weight(self, vq, weight):
-        c = "echo -n %s weight %d > /sys/module/perfiso/parameters/set_vq_weight" % (vq, weight)
+        c = "echo -n %s weight %s > /sys/module/perfiso/parameters/set_vq_weight" % (vq, weight)
         self.cmd(c)
 
     def rmmod(self, mod="perfiso"):
