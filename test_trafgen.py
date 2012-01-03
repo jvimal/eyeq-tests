@@ -32,7 +32,6 @@ parser.add_argument('--dir',
 parser.add_argument('--traffic',
                     dest="traffic",
                     help="Traffic description",
-                    required=True,
                     default=None)
 
 LOADGEN_NAME="loadgen"
@@ -46,7 +45,7 @@ if args.start:
 if args.stop:
     args.start = False
 
-if not os.path.exists(args.traffic):
+if args.start and (not traffic or not os.path.exists(args.traffic)):
     print "file %s does not exist" % args.traffic
     sys.exit(0)
 
