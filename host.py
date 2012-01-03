@@ -207,7 +207,7 @@ class Host(object):
         self.perfiso_set_vq_weight(ip, weight)
         # Configure an alias for the bridge interface
         if direct:
-            self.cmd("ifconfig %s:%d %s" % (self.get_10g_dev(), tid, ip))
+            self.cmd("ifconfig %s:%d %s; sleep 1" % (self.get_10g_dev(), tid, ip))
         else:
             self.cmd("ifconfig br0:%d %s" % (tid, ip))
         self.delayed_cmds_execute()
