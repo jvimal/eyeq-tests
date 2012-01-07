@@ -23,12 +23,12 @@ class Iperf:
         port = self.opts.get('-p', '')
         parallel = self.opts.get('-P', '')
         t = self.opts.get('-t', 30)
-        cmd = "iperf -c %s -P %s -t %d" % (server_ip, parallel, t)
+        cmd = "iperf -c %s -i 0.1 -P %s -t %d" % (server_ip, parallel, t)
         if self.opts.get('-b', False): # -b implies UDP, which is weird
             cmd += " -b %s -l32k" % self.opts.get('-b')
         if self.opts.get('-B', False):
             cmd += " -B %s " % self.opts.get('-B')
-        cmd += " > /tmp/iperf-%s 2>&1" % server_ip
+        cmd += " > %s/iperf-%s 2>&1" % (self.opts.get("dir", "/tmp"), server_ip)
         if cpu is not None:
             cpu = cpu % 8
             cmd = "taskset -c %d %s" % (cpu, cmd)
