@@ -63,6 +63,15 @@ parser.add_argument('--start-udp',
                     dest="start_udp",
                     help="For the UDP tests, select time to start UDP flow")
 
+parser.add_argument('--traffic',
+                    dest="traffic",
+                    action="store",
+                    help="For the tcpvsudp test use the traffic matrix from this file")
+
+parser.add_argument('--mtu',
+                    dest="mtu",
+                    help="MTU For the tcpvsudp test")
+
 args = parser.parse_args()
 
 def indent(s, depth=1, char='\t'):
@@ -99,7 +108,8 @@ scen = Scenarios()
 scen.add("tcp2vs32", Tcp2Vs32(t=args.time, enabled=args.enabled, dir=args.dir))
 scen.add("tcpvsudp", TcpVsUdp(t=args.time, enabled=args.enabled,
                               P=args.P, n=args.n, dir=args.dir, wtcp=args.wtcp,
-                              start_udp=args.start_udp))
+                              mtu=args.mtu,
+                              start_udp=args.start_udp, traffic=args.traffic))
 scen.add("udp", Udp(t=args.time, enabled=args.enabled,
                     P=args.P, dir=args.dir, start_udp=args.start_udp))
 scen.add("memcached", Memcached(t=args.time, dir=args.dir, case=args.case))
