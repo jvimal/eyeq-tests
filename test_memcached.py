@@ -27,7 +27,7 @@ class Memcached(Expt):
         # just memcached + bridge additional latency
         elif self.opts("case") == 2:
             self.case2()
-        # just memcached + bridge + perfiso
+        # just memcached + perfiso
         elif self.opts("case") == 3:
             self.case3()
         # memcached + cross traffic (udp) without perfiso
