@@ -364,3 +364,7 @@ class Host(object):
 
     def disable_syncookies(self):
         self.cmd("sysctl -w net.ipv4.tcp_syncookies=0")
+
+    def set_mtu(self, mtu):
+        dev = self.get_10g_dev()
+        self.cmd("ifconfig %s mtu %s" % (dev, mtu))
