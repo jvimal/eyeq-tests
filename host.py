@@ -252,7 +252,10 @@ class Host(object):
 
     def killall(self, extra=""):
         for p in self.procs:
-            p.kill()
+            try:
+                p.kill()
+            except:
+                pass
         self.cmd("killall -9 ssh iperf top bwm-ng memcached %s" % extra)
 
     def ipt_ebt_flush(self):
