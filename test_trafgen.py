@@ -45,7 +45,7 @@ if args.start:
 if args.stop:
     args.start = False
 
-if args.start and (not traffic or not os.path.exists(args.traffic)):
+if args.start and (not args.traffic or not os.path.exists(args.traffic)):
     print "file %s does not exist" % args.traffic
     sys.exit(0)
 
@@ -86,10 +86,8 @@ def start():
     return
 
 def stop():
-    for h in hosts:
-        cmd = "killall -9 %s" % LOADGEN_NAME
-        h.cmd_async(cmd, args.dryrun)
-    return
+    cmd = "killall -9 %s" % LOADGEN_NAME
+    hlist.cmd(cmd)
 
 if args.start:
     start()
