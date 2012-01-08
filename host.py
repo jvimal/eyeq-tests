@@ -63,6 +63,9 @@ class Host(object):
         self.procs = []
         self.delay = False
         self.delayed_cmds = []
+        self.dryrun = False
+    def set_dryrun(self, state=True):
+        self.dryrun = state
 
     def get(self):
         ssh = Host._ssh_cache.get(self.addr, None)
@@ -76,14 +79,14 @@ class Host(object):
     def cmd(self, c, dryrun=False):
         self.log(c)
         if not self.delay:
-            if dryrun:
-                return
+            if dryrun or self.dryrun:
+                return (self.addr, c)
             ssh = self.get()
             out = ssh.exec_command(c)[1].read()
             return out
         else:
             self.delayed_cmds.append(c)
-        return None
+        return (self.addr, c)
 
     def delayed_cmds_execute(self):
         if len(self.delayed_cmds) == 0:
@@ -98,14 +101,14 @@ class Host(object):
     def cmd_async(self, c, dryrun=False):
         self.log(c)
         if not self.delay:
-            if dryrun:
-                return
+            if dryrun or self.dryrun:
+                return (self.addr, c)
             ssh = self.get()
             out = ssh.exec_command(c)
             return out
         else:
             self.delayed_cmds.append(c)
-        return None
+        return (self.addr, c)
 
     def delayed_async_cmds_execute(self):
         if len(self.delayed_cmds) == 0:
