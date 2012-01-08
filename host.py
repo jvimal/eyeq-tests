@@ -324,16 +324,16 @@ class Host(object):
         return [self.start_cpu_monitor(dir),
                 self.start_bw_monitor(dir)]
 
-    def copy(self, dest="l1", dir="/tmp"):
+    def copy(self, dest="l1", dir="/tmp", exptid=None):
         dir = os.path.abspath(dir)
-        # Fix this
+        # This name usually contains the parameters
         expt = os.path.basename(dir)
-        if dir == "/tmp":
+        if dir == "/tmp" or exptid is None:
             return
         if type(dest) == str:
             dest = Host(dest)
         src_path = dir
-        dst_path = "~/vimal/10g/exptdata/%s/%s/" % (expt, self.hostname())
+        dst_path = "~/vimal/10g/exptdata/%s/%s/%s/" % (exptid, expt, self.hostname())
         dest.cmd("mkdir -p %s" % dst_path)
         opts = "-o StrictHostKeyChecking=no"
         c = "scp %s -r %s/* %s:%s" % (opts, src_path, dest.hostname(), dst_path)
