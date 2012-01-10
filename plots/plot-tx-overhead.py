@@ -4,10 +4,11 @@ rates = [1000, 3000, 6000, 9000]
 rls = ['htb', 'perfiso']
 num = 64
 rates = [100]
+timeout=500*1000
 
 def dir_param(rl, rate, num=None, timeout=None):
     if rl == "htb":
-        timeout=1000*1000
+        timeout=500*1000
     dir = "rl%s-r%s-tmout%d" % (rl, rate, timeout)
     if num is not None:
         dir = "rl%s-r%s-n%d-tmout%d" % (rl, rate, num, timeout)
@@ -65,7 +66,7 @@ bar_width=1
 bar_group=3
 colours = blue_colours
 
-def vary_number(timeout=1000*1000):
+def vary_number(timeout=timeout):
     rate = 100
     xlabels = []
     fig = plt.figure()
@@ -85,7 +86,7 @@ def vary_number(timeout=1000*1000):
     plt.ylim((0,15))
     return
 
-def vary_rate(timeout=1000*1000):
+def vary_rate(timeout=timeout):
     rates = [1000, 3000, 6000, 9000]
     fig = plt.figure()
     for i, rl in enumerate(rls):
@@ -129,8 +130,8 @@ def vary_connections():
     plt.ylim((0,30))
     return
 
-vary_number(timeout=1000*1000)
+#vary_number(timeout=timeout)
 vary_rate()
-vary_rate(1000*1000)
+vary_rate(timeout=timeout)
 vary_connections()
 plt.show()
