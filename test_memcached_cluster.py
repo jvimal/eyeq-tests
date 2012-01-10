@@ -41,7 +41,7 @@ parser.add_argument('--exptid',
 parser.add_argument('--memaslap',
                     dest="memaslap",
                     help="Memaslap config file",
-                    required=True)
+                    default=None)
 
 parser.add_argument('--traffic',
                     dest="traffic",
@@ -65,6 +65,11 @@ parser.add_argument('--dryrun',
                     action="store_true",
                     default=False)
 
+parser.add_argument('--active',
+                    dest="active",
+                    help="Which tenants are active? (udp/mem/udp,mem)",
+                    default="udp,mem")
+
 args = parser.parse_args()
 MEMASLAP_TID = 1
 LOADGEN_TID = 2
@@ -87,6 +92,11 @@ class MemcachedCluster(Expt):
     def memaslap(self, host, dir="/tmp"):
         time = int(self.opts("t")) - 5
         config = self.opts("memaslap")
+        active = self.opts("active")
+        if config is None:
+            return
+        if "mem" not in active:
+            return
         servers = []
         for h in self.hs.lst:
             ip = h.get_10g_ip()
@@ -98,12 +108,15 @@ class MemcachedCluster(Expt):
         cmd = "mkdir -p %s; " % dir
         cmd += "memaslap -s %s " % servers
         cmd += "-S 1s -t %ss " % time
-        cmd += "-n 4 -c 128 -T 4 -B -F %s " % config
+        cmd += "-c 512 -T 4 -B -F %s " % config
         cmd += " > %s/memaslap.txt" % dir
         host.cmd_async(cmd)
 
     def loadgen(self, host, traffic=None, dir="/tmp"):
         if traffic is None:
+            return
+        active = self.opts("active")
+        if "udp" not in active:
             return
         out = os.path.join(dir, "loadgen.txt")
         LOADGEN = "/root/vimal/exports/loadgen "
@@ -115,6 +128,8 @@ class MemcachedCluster(Expt):
         host.cmd_async(cmd)
 
     def loadgen_start(self):
+        if "udp" not in self.opts("active"):
+            return
         procs = []
         for h in self.hlist.lst:
             ip = h.get_10g_ip()
