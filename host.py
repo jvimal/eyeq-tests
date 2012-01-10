@@ -257,7 +257,7 @@ class Host(object):
                 p.kill()
             except:
                 pass
-        self.cmd("killall -9 ssh iperf top bwm-ng memcached %s" % extra)
+        self.cmd("killall -9 ssh iperf top bwm-ng memcached pimonitor %s" % extra)
 
     def ipt_ebt_flush(self):
         self.cmd("iptables -F; ebtables -t broute -F")
@@ -295,6 +295,12 @@ class Host(object):
         cmd = "bwm-ng -t %s -o csv -u bits -T rate -C ',' > %s" % (interval_sec * 1000, path)
         return self.cmd_async(cmd)
 
+    def start_tenant_monitor(self, dir="/tmp"):
+        dir = os.path.abspath(dir)
+        path = os.path.join(dir, "tenant.txt")
+        cmd = "~/vimal/exports/pimonitor > %s" % path
+        return self.cmd_async(cmd)
+
     def start_perf_monitor(self, dir="/tmp", time=30):
         dir = os.path.abspath(dir)
         path = os.path.join(dir, "perf.txt")
@@ -320,7 +326,8 @@ class Host(object):
 
     def start_monitors(self, dir="/tmp"):
         return [self.start_cpu_monitor(dir),
-                self.start_bw_monitor(dir)]
+                self.start_bw_monitor(dir),
+                self.start_tenant_monitor(dir)]
 
     def copy(self, dest="l1", dir="/tmp", exptid=None):
         dir = os.path.abspath(dir)
