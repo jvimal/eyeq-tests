@@ -20,3 +20,5 @@ ssh l19 "for d in $dir/*; do echo \`basename \$d\` \`awk '/Period/ { s += \$4; n
 
 echo "case  min  max  avg  std"
 ssh l19 "for d in $dir/*; do echo \`basename \$d\` \`awk '/Total Statistics.*events/ { ok=1; }    /(Min|Max|Avg|Std):/ { if(ok==1) { printf \"%.2f   \",\$2 } } END { print }' \$d/memaslap.txt\`;  done"
+
+echo `date` $dir

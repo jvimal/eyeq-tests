@@ -30,3 +30,5 @@ for rl in htb perfiso; do
 		done
 	done
 done
+
+echo $dir

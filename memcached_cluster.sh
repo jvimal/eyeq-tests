@@ -49,4 +49,5 @@ for mtu in 9000; do
   done
 done
 
+echo `date` $exptid
 echo -e $dirs

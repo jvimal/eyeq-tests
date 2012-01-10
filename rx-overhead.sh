@@ -18,3 +18,5 @@ for rate in 1000 3000 6000 9000; do
 			--dir $dir-without/r$rate-n$n -n $n -t $time --without-vq
 	done
 done
+
+echo $dir

@@ -35,3 +35,5 @@ for size in 10M 10G; do
 		done
 	done
 done
+
+echo `date` $dir
