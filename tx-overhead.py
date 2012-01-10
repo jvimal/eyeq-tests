@@ -87,7 +87,7 @@ class TxOverhead(Expt):
         host.cmd("tc qdisc add dev %s root handle 1: htb default 1000" % dev)
         for i in xrange(n):
             c = "tc class add dev %s parent 1: " % dev
-            c += " classid 1:%d htb rate %sMbit" % (i+1, rate)
+            c += " classid 1:%d htb rate %sMbit mtu 64000" % (i+1, rate)
             host.cmd(c)
         for i in xrange(n):
             c = "tc filter add dev %s" % dev
