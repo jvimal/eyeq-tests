@@ -62,6 +62,10 @@ class Host(object):
         self.delay = False
         self.delayed_cmds = []
         self.dryrun = False
+        self.added_root_qdisc = False
+        self.ip_to_classids = {}
+        self.next_classid = 1
+
     def set_dryrun(self, state=True):
         self.dryrun = state
 
@@ -211,6 +215,45 @@ class Host(object):
             self.cmd("ifconfig %s:%d %s" % (self.get_10g_dev(), tid, ip))
         else:
             self.cmd("ifconfig br0:%d %s" % (tid, ip))
+        self.delayed_cmds_execute()
+
+    def get_classid(self, ip=None):
+        if ip is None:
+            # Default classid
+            return 1000
+        classid = self.ip_to_classids.get(ip, None)
+        if classid is None:
+            classid = self.next_classid
+            self.next_classid += 1
+        return classid
+
+    def create_ip_tx_rl(self, ip=None, rate='1Gbit', static=False):
+        self.delay = True
+        dev = self.get_10g_dev()
+        if ip is None:
+            return
+        #ip = self.get_tenant_ip(tid)
+        classid = self.get_classid(ip)
+
+        if not self.added_root_qdisc:
+            self.remove_qdiscs()
+            cmd = "tc qdisc add dev %s root handle 1: htb default 1000" % dev
+            self.cmd(cmd)
+            #cmd = "tc class add dev %s parent 1: " % dev
+            #cmd += " classid 1:1 htb rate 10Gbit"
+            #self.cmd(cmd)
+            self.added_root_qdisc = True
+
+        ceil = "10Gbit"
+        if static:
+            ceil = rate
+        cmd = "tc class add dev %s parent 1: classid 1:%s " % (dev, classid)
+        cmd += "htb rate %s ceil %s mtu 64000" % (rate, ceil)
+        self.cmd(cmd)
+
+        cmd = "tc filter add dev %s protocol ip parent 1: prio 1 " % dev
+        cmd += " u32 match ip src %s flowid 1:%s" % (ip, classid)
+        self.cmd(cmd)
         self.delayed_cmds_execute()
 
     def create_tcp_tenant(self, server_ports=[], tid=1, weight=1):
