@@ -36,6 +36,8 @@ class Memcached(Expt):
         # memcached + cross traffic (udp) with perfiso
         elif self.opts("case") == 5:
             self.case5()
+        elif self.opts("case") == 6:
+            self.case6()
 
     def case1(self, out="case1"):
         h1 = Host("10.0.1.17")
@@ -48,8 +50,8 @@ class Memcached(Expt):
         dir = os.path.join(self.opts("dir"), out)
         cmd = "mkdir -p %s; " % dir
         #cmd += "cd ~/vimal/libmemcached-1.0.2/clients; "
-        time = int(self.opts("t")) - 5
-        cmd += "memaslap -s %s:11211 -S 1s -t %ss -n 4 -c 128 -T 8 -B -F ~/vimal/exports/memaslap.cnf" % (h1.get_10g_ip(), time)
+        time = int(self.opts("t")) - 10
+        cmd += "memaslap -s %s:11211 -S 1s -t %ss -c 512 -T 8 -B -F ~/vimal/exports/memaslap.cnf" % (h1.get_10g_ip(), time)
         cmd += " > %s" % (os.path.join(dir, "memaslap.txt"))
         h2.cmd_async(cmd)
         h2.start_monitors(dir)
@@ -73,7 +75,7 @@ class Memcached(Expt):
         dir = os.path.join(self.opts("dir"), out)
         cmd = "mkdir -p %s; " % dir
         #cmd += "cd ~/vimal/libmemcached-1.0.2/clients; "
-        time = int(self.opts("t")) - 5
+        time = int(self.opts("t")) - 10
         cmd += "memaslap -s %s:11211 -S 1s -t %ss -n 4 -c 128 -T 8 -B -F ~/vimal/exports/memaslap.cnf" % (h1.get_tenant_ip(1), time)
         cmd += " > %s" % (os.path.join(dir, "memaslap.txt"))
         h2.cmd_async(cmd)
@@ -82,11 +84,12 @@ class Memcached(Expt):
     def case3(self):
         self.case2(insert=True, out="case3")
 
-    def case4(self):
-        self.case1(out="case4")
+    def case4(self, out="case4", static=False):
+        self.case1(out=out)
         h1 = Host("10.0.1.17")
         h3 = Host("10.0.1.20")
-
+        if static:
+            h3.create_ip_tx_rl(ip=h3.get_10g_ip(), rate='4Gbit', static=True)
         iperf = Iperf({'-c': h1.get_10g_ip(),
                        '-t': self.opts("t"),
                        '-P': 16,
@@ -112,12 +115,18 @@ class Memcached(Expt):
 
         HostList(h1, h3).create_ip_tenant(2)
         iperf = Iperf({'-c': h1.get_tenant_ip(2),
+                       '-B': h3.get_tenant_ip(2),
                        '-t': self.opts("t"),
                        '-P': 16,
                        '-b': '3G',
                        '-u': True})
         self.procs.append(iperf.start_server(h1))
         self.procs.append(iperf.start_client(h3))
+
+    def case6(self):
+        # Without iso, but with static allocation
+        # Goal: to compare how good we're against static allocation
+        self.case4(out="case6", static=True)
 
     def stop(self):
         for p in self.procs:
