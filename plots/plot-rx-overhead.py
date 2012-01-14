@@ -15,6 +15,11 @@ parser.add_argument('--maxy',
                     dest="maxy",
                     type=int)
 
+parser.add_argument('-o',
+                    help="Output file to save",
+                    default=None,
+                    dest="out")
+
 args = parser.parse_args()
 
 rates = [1000, 3000, 6000, 9000]
@@ -92,5 +97,8 @@ def plot_without(without=False):
 
 # This negative variable naming is a pain, I know! ;)
 plot_without(False)
-#plot_without(True)
-plt.show()
+plot_without(True)
+if args.out:
+    plt.savefig(args.out)
+else:
+    plt.show()
