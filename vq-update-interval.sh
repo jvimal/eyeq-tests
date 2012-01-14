@@ -9,7 +9,7 @@ ctrlc() {
 
 trap ctrlc SIGINT
 
-basecmd="python tests/scenario.py --time $time -n 1 --run tcpvsudp"
+basecmd="python tests/scenario.py --time $time --run tcpvsudp"
 
 size=100G
 proto=udp
@@ -21,11 +21,12 @@ python tests/genconfig.py --type $proto --traffic incast \
 
 for vqu in 10 25 50 100 500 1000; do
 for mtu in 1500 9000; do
-
-	$basecmd --vqupdate $vqu --dir $dir/mtu$mtu-vq${vqu}us --enable \
+for n in 1 2 4 8 14; do
+	subdir=mtu$mtu-vq${vqu}us-n$n
+	$basecmd -n $n --vqupdate $vqu --dir $dir/$subdir --enable \
 		--traffic ~/vimal/exports/14to1_${size}_${proto}_tenant \
 		--mtu $mtu
-
+done
 done
 done
 
