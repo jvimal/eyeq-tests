@@ -33,26 +33,18 @@ class TcpVsUdp(Expt):
         if self.opts("enabled"):
             hlist.insmod()
             self.log("Creating two tenants")
-            #h1.create_tcp_tenant(server_ports=[5001], tid=1)
-            #h1.create_udp_tenant(server_ports=[5002], tid=2)
-
-            #h2.create_tcp_tenant(server_ports=[5001], tid=1)
-            #h3.create_udp_tenant(server_ports=[5002], tid=2)
             h1.create_ip_tenant(tid=1)
             h1.create_ip_tenant(tid=2)
             # Set the weight for TCP tenant.  UDP's weight is 1
             h1.perfiso_set_vq_weight(vq=1, weight=self.opts("wtcp"))
 
             h2.create_ip_tenant(tid=1)
-            #for hi in hlist_udp.lst:
-            #    hi.create_ip_tenant(tid=2)
             hlist_udp.create_ip_tenant(2)
 
         if self.opts("enabled"):
             hlist.perfiso_set("IsoAutoGenerateFeedback", "1")
-            hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", 8500)
-            if self.opts("vqupdate"):
-                hlist.perfiso_set("ISO_VQ_UPDATE_INTERVAL_US", self.opts("vqupdate"))
+            hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", self.opts("vqrate"))
+            hlist.perfiso_set("ISO_VQ_UPDATE_INTERVAL_US", self.opts("vqupdate"))
             hlist.perfiso_set("ISO_RFAIR_INITIAL", 9000)
         if self.opts("mtu"):
             hlist.set_mtu(self.opts("mtu"))

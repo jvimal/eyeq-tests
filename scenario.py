@@ -75,7 +75,12 @@ parser.add_argument('--mtu',
 parser.add_argument('--vqupdate',
                     dest="vqupdate",
                     help="VQ update interval in us",
-                    default=None)
+                    default="25")
+
+parser.add_argument('--vqrate',
+                    dest="vqrate",
+                    help="VQ drain rate in Mbps",
+                    default="8500")
 
 args = parser.parse_args()
 
@@ -114,6 +119,7 @@ scen.add("tcp2vs32", Tcp2Vs32(t=args.time, enabled=args.enabled, dir=args.dir))
 scen.add("tcpvsudp", TcpVsUdp(t=args.time, enabled=args.enabled,
                               P=args.P, n=args.n, dir=args.dir, wtcp=args.wtcp,
                               mtu=args.mtu, vqupdate=args.vqupdate,
+                              vqrate=args.vqrate,
                               start_udp=args.start_udp, traffic=args.traffic))
 scen.add("udp", Udp(t=args.time, enabled=args.enabled,
                     P=args.P, dir=args.dir, start_udp=args.start_udp))
