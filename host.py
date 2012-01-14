@@ -162,7 +162,7 @@ class Host(object):
     def get_tenant_ip(self, tid=1):
         assert(tid > 0 and tid < 255)
         myindex = int(self.addr.split('.')[-1])
-        return "11.0.%d.%d" % (myindex, tid)
+        return "11.0.%d.%d" % (tid, myindex)
 
     def insmod(self, mod=PI_MODULE, params="iso_param_dev=eth2"):
         params = "iso_param_dev=%s" % self.get_10g_dev()
