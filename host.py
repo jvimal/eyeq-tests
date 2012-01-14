@@ -186,6 +186,18 @@ class Host(object):
                 "ifconfig br0 %s up" % (ip)]
         self.cmd('; '.join(cmds))
 
+    def setup_tenant_routes(self, num_tenants=2):
+        # route to 11.0.tid.* should be via ethx:tid from 11.0.tid.myindex
+        # This ensures that the right source address is chosen for a tenant.
+        # So far, this has been done explicitly by binds(), but I do not want
+        # to try it with Hadoop!
+        myindex = int(self.addr.split('.')[-1])
+        dev = self.get_10g_dev()
+        for tid in xrange(1, 1+num_tenants):
+            cmd = "route add -net 11.0.%d.0/24 dev %s:%d" % (tid, dev, tid)
+            self.cmd(cmd)
+        return
+
     def remove_bridge(self, direct=True):
         if direct:
             return
