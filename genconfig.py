@@ -28,11 +28,11 @@ parser.add_argument('-P',
                     dest="P",
                     type=int,
                     help="Number of parallel connections per host",
-                    default=4)
+                    default=1)
 
 parser.add_argument('--traffic',
                     dest="traffic",
-                    choices=["fullmesh", "incast"],
+                    choices=["fullmesh", "incast", "sort"],
                     default="incast")
 
 parser.add_argument('--pattern',
@@ -59,20 +59,27 @@ parser.add_argument('--inter',
                     type=int,
                     default=10)
 
+parser.add_argument('--start',
+                    dest="start",
+                    default="20.0")
 
 args = parser.parse_args()
 
 def parse_size(s):
     if 'K' in s:
         size = int(s.replace('K','')) * 10**3
-    if 'M' in s:
+    elif 'M' in s:
         size = int(s.replace('M', '')) * 10**6
     elif 'G' in s:
         size = int(s.replace('G', '')) * 10**9
+    elif 'T' in s:
+        size = int(s.replace('T', '')) * 10**12
+    else:
+        size = int(s)
     return size
 
 # Simple full mesh
-def fullmesh():
+def fullmesh(sort=False):
     n = args.n
     type = args.type.upper()
     time = args.time
@@ -80,6 +87,16 @@ def fullmesh():
     seed = 0
     P = args.P
     size = parse_size(args.size)
+    start = args.start
+
+    if sort:
+        # 1 day
+        time = 86400
+        pairs = n * (n-1)
+        # Size is interpreted as total size of data to sort
+        size_per_flow = size / (pairs * P)
+        size = size_per_flow
+        args.repeat = 1
 
     print "#src_ip dst_ip dst_port type seed start_time stop_time flow_size r/e repetitions time_between_flows r/e (rpc_delay r/e)"
 
@@ -97,7 +114,7 @@ def fullmesh():
                     hj = Host(pick_host_ip(j)).get_tenant_ip(args.tenant)
                 out = "%s %s " % (hi, hj)
                 out += "%s %s %s " % (port, type, seed)
-                out += "%s %s " % (0.0, time)
+                out += "%s %s " % (start, time)
                 out += "%s exact " % size
                 out += "%s %s exact" % (args.repeat, args.inter)
                 print out
@@ -110,6 +127,8 @@ def nto1():
     seed = 0
     size = parse_size(args.size)
     P = args.P
+    start = args.start
+
     print "#src_ip dst_ip dst_port type seed start_time stop_time flow_size r/e repetitions time_between_flows r/e (rpc_delay r/e)"
 
     h0 = pick_10g_ip(0)
@@ -123,7 +142,7 @@ def nto1():
             seed += 1
             out = "%s %s " % (hi, h0)
             out += "%s %s %s " % (port, type, seed)
-            out += "%s %s " % (0.0, time)
+            out += "%s %s " % (start, time)
             out += "%s exact " % size
             out += "%s %s exact" % (args.repeat, args.inter)
             print out
@@ -132,3 +151,5 @@ if args.traffic == "fullmesh":
     fullmesh()
 elif args.traffic == "incast":
     nto1()
+elif args.traffic == "sort":
+    fullmesh(sort=True)
