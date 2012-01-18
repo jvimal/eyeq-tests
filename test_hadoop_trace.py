@@ -56,32 +56,43 @@ parser.add_argument('--time', '-t',
                     dest="t",
                     default=120)
 
-HADOOP_TID = 1
-LOADGEN_TID = 2
+parser.add_argument('--nhadoop', '-n',
+                    dest="nhadoop",
+                    type=int,
+                    default=1)
+LOADGEN_TID = 1
+# hadoop tenant ids start from 2
+HADOOP_TID = 2
 
 args = parser.parse_args()
 
 class HadoopTrace(Expt):
     def create_tenants(self):
-        self.hlist.create_ip_tenant(HADOOP_TID)
         self.hlist.create_ip_tenant(LOADGEN_TID)
+        n = args.nhadoop-1
+        for i in xrange(args.nhadoop):
+            self.hlist.create_ip_tenant(HADOOP_TID+i, 2**(n-i))
         self.hlist.setup_tenant_routes()
 
-    def start_hadoop(self):
-        # Create loadgen file
-        traffic = "~/vimal/exports/loadfiles/sort_%s" % self.opts("size")
-        cmd = "python tests/genconfig.py --type tcp -n 16 -P 2 --tenant %s" % HADOOP_TID
-        cmd += " --traffic sort --size %s" % self.opts("size")
-        cmd += " --port %s > %s" % (12345+HADOOP_TID, traffic)
-        print "Generating traffic matrix for sort"
-        Popen(cmd, shell=True).wait()
-        self.start_loadgen(out="sort.txt", tid=HADOOP_TID, traffic=traffic)
+    def get_hadoop_P(self, i):
+        return 2**i
 
-    def check_hadoop_done(self):
+    def start_hadoop(self, i, P=1):
+        # Create loadgen file
+        tid = HADOOP_TID + i
+        traffic = "~/vimal/exports/loadfiles/sort_%s_%s" % (self.opts("size"), tid)
+        cmd = "python tests/genconfig.py --type tcp -n 16 -P %s --tenant %s" % (P, tid)
+        cmd += " --traffic sort --size %s" % self.opts("size")
+        cmd += " --port %s > %s" % (12345+tid, traffic)
+        print "Generating traffic matrix for sort for hadoop %s" % i
+        Popen(cmd, shell=True).wait()
+        self.start_loadgen(out="sort-%s.txt" % i, tid=tid, traffic=traffic)
+
+    def check_hadoop_done(self, i):
         # Sort is running on a host if file /dir/sort.txt exists and
         # "client thread terminated" has not been printed yet in that
         # file
-        f = os.path.join(self.opts("dir"), "sort.txt")
+        f = os.path.join(self.opts("dir"), "sort-%s.txt" % i)
         done = True
         for h in self.hlist.lst:
             cmd = "if [ -f %s ]; then grep 'client thread terminated' %s; " % (f, f)
@@ -101,18 +112,21 @@ class HadoopTrace(Expt):
                 done = False
         return done
 
-    def start_loadgen(self, out="loadgen.txt", tid=2, traffic=None):
+    def start_loadgen(self, out="loadgen.txt", tid=2, traffic=None, cpu=None):
         dir = self.opts("dir")
         out = os.path.join(dir, out)
         LOADGEN = "/root/vimal/exports/loadgen"
         # Start in all hosts
         if traffic is None:
             return
+        if cpu is None:
+            cpu = self.nextcpu
+            self.nextcpu = (self.nextcpu + 2) % 8
         port = 12345 + tid
         for h in self.hlist.lst:
             ip = h.get_tenant_ip(tid)
             cmd = "mkdir -p %s; " % dir
-            cmd += "%s -i %s -vv " % (LOADGEN, ip)
+            cmd += "taskset -c %s,%s %s -i %s -vv " % (cpu, cpu+1, LOADGEN, ip)
             cmd += " -l %s -p 1000000 -f %s > %s" % (port, traffic, out)
             h.cmd_async(cmd)
 
@@ -129,6 +143,7 @@ class HadoopTrace(Expt):
 
     def start(self):
         hlist = HostList()
+        self.nextcpu = 0
         self.completed = defaultdict(bool)
         for ip in host_ips:
             hlist.lst.append(Host(ip))
@@ -147,7 +162,9 @@ class HadoopTrace(Expt):
         if self.opts("enabled"):
             self.hlist.insmod()
         self.create_tenants()
-        self.start_hadoop()
+        self.hlist.start_monitors(self.opts("dir"))
+        for i in xrange(self.opts("nhadoop")):
+            self.start_hadoop(i, P=self.get_hadoop_P(i))
         self.start_loadgen(tid=LOADGEN_TID, traffic=self.opts("traffic"))
         return
 
@@ -159,11 +176,13 @@ class HadoopTrace(Expt):
             return
         try:
             while 1:
-                done = self.check_hadoop_done()
+                done = True
+                for i in xrange(self.opts("nhadoop")):
+                    done = done and self.check_hadoop_done(i)
                 if done:
                     break
                 else:
-                    print "Waiting for hadoop job...", datetime.datetime.now()
+                    print "Waiting for hadoop job(s)...", datetime.datetime.now()
                     try:
                         progress(60)
                     except:
