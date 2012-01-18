@@ -14,7 +14,7 @@ from collections import defaultdict
 from pprint import pprint
 
 
-default_colours = ['y','g','r','b','purple','brown','cyan']
+default_colours = ['g','r','b', 'y', 'purple','brown','cyan']
 blue_colours = ['#ECEDF2', '#B2D1E5', '#9AB4CB', '#3C8DC5', '#396A92', '#091D42']
 
 
