@@ -9,9 +9,12 @@ timeout=500*1000
 def dir_param(rl, rate, num=None, timeout=None):
     if rl == "htb":
         timeout=500*1000
-    dir = "rl%s-r%s-tmout%d" % (rl, rate, timeout)
-    if num is not None:
+    if timeout is not None:
+        dir = "rl%s-r%s-tmout%d" % (rl, rate, timeout)
+    if num is not None and timeout is not None:
         dir = "rl%s-r%s-n%d-tmout%d" % (rl, rate, num, timeout)
+    if timeout is None:
+        dir = "rl%s-r%s-n%d-tmout" % (rl, rate, num)
     return dir
 
 def yvalue2(rl, rate, num=None, timeout=None):
@@ -59,14 +62,21 @@ def yvalue_P(rl, P=4, cols="sirq"):
     data = parse_rate_usage(os.path.join(dir, "net.txt"),
                             ifaces=["eth2"], dir="tx", divider=1e6)
     data = avg(data["eth2"][30:])
-    print data
+    print yvalue2_P(rl, P)
     return ret
+
+def yvalue2_P(rl, P=4):
+    dir = "rl%s-r9000-P%d" % (rl, P)
+    data = parse_rate_usage(os.path.join(dir, "net.txt"),
+                            ifaces=["eth2"], dir="tx", divider=1e6)
+    data = avg(data["eth2"][30:])
+    return data
 
 bar_width=1
 bar_group=3
 colours = blue_colours
 
-def vary_number(timeout=timeout):
+def vary_number(timeout=None):
     rate = 100
     xlabels = []
     fig = plt.figure()
@@ -77,12 +87,14 @@ def vary_number(timeout=timeout):
         for index, num in enumerate([8, 16, 32, 64, 128]):
             xs.append(3*index + i)
             ys.append(yvalue(rl, rate, num, timeout=timeout, cols="user,sirq,sys,hirq"))
+            plt.text(3*index+i, ys[-1]+5,
+                     '%.1fM' % yvalue2(rl, rate, num, timeout), rotation='vertical')
             xlabels.append(str(num))
         plt.bar(xs, ys, bar_width, label=rl, color=colours[i])
         plt.xticks(xs, xlabels)
     plt.grid()
     plt.legend(loc="upper left")
-    plt.title("Vary # RLs for rate=100Mbps (tmout=%.2fms)" % (timeout / 1e6))
+    plt.title("Vary # RLs for rate=100Mbps")
     plt.ylim((0,15))
     return
 
@@ -97,13 +109,16 @@ def vary_rate(timeout=timeout):
             xs.append(3*index + i)
             xlabels.append("%sG" % (rate/1000))
             ys.append(yvalue(rl, rate, timeout=timeout, cols="user,sirq,sys,hirq"))
+            plt.text(3*index+i, ys[-1]+5,
+                     '%.1fM' % yvalue2(rl, rate, timeout=timeout), rotation='vertical')
+
         plt.bar(xs, ys, bar_width, label=rl, color=colours[i])
         plt.xlabel("Rate")
         plt.ylabel("CPU usage fraction")
         plt.xticks(xs, xlabels)
     plt.grid()
     plt.legend(loc="upper left")
-    plt.title("Vary rates for different RLs and perfiso timeout=%dms" % (timeout/1e6))
+    plt.title("Vary rates for different RLs for perfiso")
     plt.ylim((0,15))
     return
 
@@ -120,6 +135,9 @@ def vary_connections():
             xs.append(3*index + i)
             xlabels.append(str(P))
             ys.append(yvalue_P(rl, P, cols="user,sirq,sys,hirq"))
+            plt.text(3*index+i, ys[-1]+5,
+                     '%.1fM' % yvalue2_P(rl, P), rotation='vertical')
+
         plt.bar(xs, ys, bar_width, label=rl, color=colours[i])
         plt.xlabel("Num TCP connections")
         plt.ylabel("CPU usage")
@@ -130,8 +148,8 @@ def vary_connections():
     plt.ylim((0,30))
     return
 
-#vary_number(timeout=timeout)
-vary_rate()
-vary_rate(timeout=timeout)
-vary_connections()
+vary_number()
+#vary_rate()
+#vary_rate(timeout=timeout)
+#vary_connections()
 plt.show()

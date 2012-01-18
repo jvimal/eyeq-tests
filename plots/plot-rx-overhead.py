@@ -66,7 +66,7 @@ bar_group=len(nums)+1
 cols = args.cols
 
 def plot_without(without=False):
-    alpha = 0.3
+    alpha = 0.4
     first = True
     for i, n in enumerate(nums):
         xs = []
@@ -78,12 +78,15 @@ def plot_without(without=False):
             xs.append(xindex)
             xlabels.append("%sG" % (rate/1000))
             ys.append(yvalue(rate, num=n, without=without, cols=cols))
-            yvalue2(rate, num=n, without=without)
+            rate = yvalue2(rate, num=n, without=without)
+            if without == False:
+                plt.text(xindex, ys[-1] + 10,
+                         '%.1fM' % rate, rotation='vertical')
 
         if without == False:
             plt.bar(xs, ys, bar_width, color=colours[i], alpha=alpha)
         else:
-            plt.bar(xs, ys, bar_width, color=colours[i], label="4x%d" % n)
+            plt.bar(xs, ys, bar_width, color=colours[i], label="4x%d" % n)#, alpha=alpha)
         plt.xlabel("Rate")
         plt.ylabel("CPU usage fraction")
         plt.xticks(xs, xlabels)
