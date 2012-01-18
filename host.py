@@ -148,6 +148,10 @@ class Host(object):
         c = "echo -n %s weight %s > /sys/module/perfiso/parameters/set_vq_weight" % (vq, weight)
         self.cmd(c)
 
+    def perfiso_set_txc_weight(self, vq, weight):
+        c = "echo -n %s weight %s > /sys/module/perfiso/parameters/set_txc_weight" % (vq, weight)
+        self.cmd(c)
+
     def rmmod(self, mod="perfiso"):
         self.cmd("rmmod %s" % mod)
 
@@ -225,6 +229,7 @@ class Host(object):
         self.perfiso_create_vq(ip)
         self.perfiso_assoc_txc_vq(ip, ip)
         self.perfiso_set_vq_weight(ip, weight)
+        self.perfiso_set_txc_weight(ip, weight)
         # Configure an alias for the bridge interface
         if direct:
             self.cmd("ifconfig %s:%d %s" % (self.get_10g_dev(), tid, ip))
