@@ -18,6 +18,10 @@ parser.add_argument('-t', '--title',
                     dest='title',
                     default="Flow/Job completion times")
 
+parser.add_argument('--out', '-o',
+                    dest='out',
+                    help="Output plot to file")
+
 args = parser.parse_args()
 assert(len(args.legend) == len(args.dirs))
 
@@ -96,4 +100,8 @@ plt.xlabel("Seconds")
 plt.ylabel("CDF/Fraction")
 plt.legend(loc="upper left")
 plt.grid()
-plt.show()
+if args.out:
+    plt.savefig(args.out)
+else:
+    plt.show()
+
