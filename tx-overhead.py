@@ -16,6 +16,7 @@ parser = argparse.ArgumentParser(description="Perfiso TX overhead test.")
 parser.add_argument('--rate',
                     dest="rate",
                     action="store",
+                    type=int,
                     help="Rate of static rate limiter.",
                     required=True)
 
@@ -110,8 +111,8 @@ class TxOverhead(Expt):
         if self.opts('rl') == "perfiso":
             hlist.insmod()
             hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", "11000")
-            hlist.perfiso_set("ISO_MAX_TX_RATE", self.opts('rate'))
-            hlist.perfiso_set("ISO_RFAIR_INITIAL", self.opts('rate'))
+            hlist.perfiso_set("ISO_MAX_TX_RATE", self.opts("n") * self.opts('rate'))
+            hlist.perfiso_set("ISO_RFAIR_INITIAL", self.opts("n") * self.opts('rate'))
             hlist.perfiso_set("ISO_TOKENBUCKET_TIMEOUT_NS", self.opts('timeout'))
             h1.delay = True
             h2.delay = True
@@ -147,10 +148,12 @@ class TxOverhead(Expt):
         self.start_monitor(m)
         m = multiprocessing.Process(target=monitor_bw, args=("%s/net.txt" % self.opts('dir'),))
         self.start_monitor(m)
-        #m = multiprocessing.Process(target=monitor_perf,
-        #                            args=("%s/perf.txt" % self.opts('dir'), self.opts('t')))
-        #self.start_monitor(m)
+        #if self.opts("perf"):
+        #    m = multiprocessing.Process(target=monitor_perf,
+        #                                args=("%s/perf.txt" % self.opts('dir'), self.opts('t')))
+        #    self.start_monitor(m)
 
+        h1.setup_tenant_routes()
         self.log("Starting %d iperfs" % n)
         # Start iperfs servers
         parallel = self.opts("P")
