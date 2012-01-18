@@ -16,6 +16,8 @@ class Memcached(Expt):
         hlist = HostList(h1, h2, h3)
 
         hlist.cmd("killall -9 memaslap")
+        hlist.cmd("sysctl -w net.ipv4.tcp_delayed_ack=1")
+        hlist.rmmod()
         dir = self.opts("dir")
         self.hlist = hlist
         # h2 to h1 memcached
@@ -54,7 +56,7 @@ class Memcached(Expt):
         cmd += "memaslap -s %s:11211 -S 1s -t %ss -c 512 -T 8 -B -F ~/vimal/exports/memaslap.cnf" % (h1.get_10g_ip(), time)
         cmd += " > %s" % (os.path.join(dir, "memaslap.txt"))
         h2.cmd_async(cmd)
-        h2.start_monitors(dir)
+        hlist.start_monitors(dir)
 
     def case2(self, insert=False, out="case2"):
         h1 = Host("10.0.1.17")
@@ -63,8 +65,8 @@ class Memcached(Expt):
         hlist.rmmod()
         if insert:
             hlist.insmod()
-            hlist.perfiso_set("ISO_RFAIR_INITIAL", 11000)
-            hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", 11000)
+            hlist.perfiso_set("ISO_RFAIR_INITIAL", 20000)
+            hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", 20000)
         hlist.prepare_iface()
         hlist.configure_rps()
         hlist.disable_syncookies()
@@ -76,10 +78,10 @@ class Memcached(Expt):
         cmd = "mkdir -p %s; " % dir
         #cmd += "cd ~/vimal/libmemcached-1.0.2/clients; "
         time = int(self.opts("t")) - 10
-        cmd += "memaslap -s %s:11211 -S 1s -t %ss -n 4 -c 128 -T 8 -B -F ~/vimal/exports/memaslap.cnf" % (h1.get_tenant_ip(1), time)
+        cmd += "memaslap -s %s:11211 -S 1s -t %ss -c 512 -T 8 -B -F ~/vimal/exports/memaslap.cnf" % (h1.get_tenant_ip(1), time)
         cmd += " > %s" % (os.path.join(dir, "memaslap.txt"))
         h2.cmd_async(cmd)
-        h2.start_monitors(dir)
+        hlist.start_monitors(dir)
 
     def case3(self):
         self.case2(insert=True, out="case3")
@@ -131,5 +133,6 @@ class Memcached(Expt):
     def stop(self):
         for p in self.procs:
             p.kill()
-        self.hlist.killall("memaslap")
+        self.hlist.remove_qdiscs()
+        self.hlist.killall()
         self.hlist.remove_tenants()
