@@ -60,6 +60,13 @@ parser.add_argument('--nhadoop', '-n',
                     dest="nhadoop",
                     type=int,
                     default=1)
+
+parser.add_argument('--static',
+                    dest="static",
+                    action="store_true",
+                    help="Static bandwidth for UDP",
+                    default=False)
+
 LOADGEN_TID = 1
 # hadoop tenant ids start from 2
 HADOOP_TID = 2
@@ -69,13 +76,18 @@ args = parser.parse_args()
 class HadoopTrace(Expt):
     def create_tenants(self):
         self.hlist.create_ip_tenant(LOADGEN_TID)
+        if self.opts("static"):
+            for h in self.hlist.lst:
+                h.create_ip_tx_rl(ip=h.get_tenant_ip(LOADGEN_TID), rate='5Gbit', static=True)
+        else:
+            self.hlist.remove_qdiscs()
         n = args.nhadoop-1
         for i in xrange(args.nhadoop):
-            self.hlist.create_ip_tenant(HADOOP_TID+i, 2**(n-i))
+            self.hlist.create_ip_tenant(HADOOP_TID+i)
         self.hlist.setup_tenant_routes()
 
     def get_hadoop_P(self, i):
-        return 2**i
+        return 3**i
 
     def start_hadoop(self, i, P=1):
         # Create loadgen file
@@ -94,6 +106,8 @@ class HadoopTrace(Expt):
         # file
         f = os.path.join(self.opts("dir"), "sort-%s.txt" % i)
         done = True
+        done_count = 0
+        total_count = 0
         for h in self.hlist.lst:
             cmd = "if [ -f %s ]; then grep 'client thread terminated' %s; " % (f, f)
             cmd += "else echo 'sort not running'; fi"
@@ -108,8 +122,11 @@ class HadoopTrace(Expt):
                         print 'Completed in %s' % h.addr
                     self.completed[h.addr] = True
                 done = done and True
+                done_count += 1
             else:
                 done = False
+            total_count += 1
+        print '%d/%d' % (done_count, total_count)
         return done
 
     def start_loadgen(self, out="loadgen.txt", tid=2, traffic=None, cpu=None):
@@ -143,7 +160,7 @@ class HadoopTrace(Expt):
 
     def start(self):
         hlist = HostList()
-        self.nextcpu = 0
+        self.nextcpu = 2
         self.completed = defaultdict(bool)
         for ip in host_ips:
             hlist.lst.append(Host(ip))
