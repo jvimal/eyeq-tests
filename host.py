@@ -52,6 +52,9 @@ class HostList(object):
             ret = lambda *args: map(lambda h: h.__getattribute__(name)(*args), self.lst)
             return ret
 
+    def __iter__(self):
+        return self.lst
+
 class Host(object):
     _ssh_cache = {}
     def __init__(self, addr):
@@ -75,6 +78,7 @@ class Host(object):
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh.connect(self.addr, username='root')
+            ssh.get_transport().set_keepalive(interval=5)
             Host._ssh_cache[self.addr] = ssh
         return ssh
 
