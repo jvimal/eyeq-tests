@@ -56,6 +56,11 @@ parser.add_argument("--profile",
                     help="Directory to store profile data.  Omit if you don't want to profile",
                     default=None)
 
+parser.add_argument('--mtu',
+                    dest="mtu",
+                    help="Set MTU on hosts",
+                    default="1500")
+
 args = parser.parse_args()
 
 if int(args.timeout) <= 10:
