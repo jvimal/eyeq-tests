@@ -36,7 +36,11 @@ parser.add_argument('--dir',
                     dest="dir",
                     default="/tmp")
 
-parser.add_argument('--enable',
+parser.add_argument('--exptid',
+                    dest="exptid",
+                    default=None)
+
+parser.add_argument('--enable', '--enabled',
                     action="store_true",
                     dest="enabled",
                     help="Enable perfisolation",
@@ -80,7 +84,7 @@ parser.add_argument('--vqupdate',
 parser.add_argument('--vqrate',
                     dest="vqrate",
                     help="VQ drain rate in Mbps",
-                    default="8500")
+                    default="9000")
 
 args = parser.parse_args()
 
@@ -117,6 +121,7 @@ from test_memcached import Memcached
 scen = Scenarios()
 scen.add("tcp2vs32", Tcp2Vs32(t=args.time, enabled=args.enabled, dir=args.dir))
 scen.add("tcpvsudp", TcpVsUdp(t=args.time, enabled=args.enabled,
+                              exptid=args.exptid,
                               P=args.P, n=args.n, dir=args.dir, wtcp=args.wtcp,
                               mtu=args.mtu, vqupdate=args.vqupdate,
                               vqrate=args.vqrate,
