@@ -20,7 +20,7 @@ python tests/genconfig.py --type udp -n 16 --tenant 1 \
 
 for mtu in 9000; do
 for size in 1T 10T 100T; do
-for iso in "" "--enable"; do
+for iso in "" "--static" "--enable"; do
 	subdir=size$size-iso$iso-mtu$mtu
 	python tests/test_hadoop_trace.py --mtu 9000 \
 		--dir /tmp/$exptid/$subdir --size $size \
