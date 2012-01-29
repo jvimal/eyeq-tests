@@ -84,7 +84,7 @@ def plt_udp():
 
 plt_rx()
 plt_tcp()
-plt_udp()
+#plt_udp()
 plt.ylim((0, 10000))
 plt.xlim((0,80))
 plt.grid()

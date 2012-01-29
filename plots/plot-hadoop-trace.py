@@ -80,7 +80,10 @@ for i,dir in enumerate(args.dirs):
     col = default_colours[i]
     for d in glob.glob(dir + "/*"):
         print d
-        fcts = parse_fcts(os.path.join(d, "sort.txt"))
+        try:
+            fcts = parse_fcts(os.path.join(d, "sort.txt"))
+        except:
+            fcts = parse_fcts(os.path.join(d, "sort-0.txt"))
         print fcts.values()
         all_values += fcts.values()
         plot_cdf(fcts.values(), alpha=0.3, color=col)
@@ -99,6 +102,7 @@ plt.title(args.title)
 plt.xlabel("Seconds")
 plt.ylabel("CDF/Fraction")
 plt.legend(loc="upper left")
+plt.legend(loc="center right")
 plt.grid()
 if args.out:
     plt.savefig(args.out)

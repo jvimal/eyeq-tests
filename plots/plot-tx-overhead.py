@@ -1,4 +1,18 @@
+import plot_defaults
 from helper import *
+
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('-o', '--out',
+                    dest="out",
+                    default=None)
+
+parser.add_argument('-p',
+                    dest="plot",
+                    choices=["number","rate"],
+                    default="number")
+
+args = parser.parse_args()
 
 rates = [1000, 3000, 6000, 9000]
 rls = ['htb', 'perfiso']
@@ -76,6 +90,16 @@ bar_width=1
 bar_group=3
 colours = blue_colours
 
+def get_hatch(rl):
+    if rl == "perfiso":
+        return '*'
+    return ' '
+
+def get_label(rl):
+    if rl == "perfiso":
+        return 'EyeQ'
+    return rl
+
 def vary_number(timeout=None):
     rate = 100
     xlabels = []
@@ -87,14 +111,18 @@ def vary_number(timeout=None):
         for index, num in enumerate([8, 16, 32, 64, 128]):
             xs.append(3*index + i)
             ys.append(yvalue(rl, rate, num, timeout=timeout, cols="user,sirq,sys,hirq"))
-            plt.text(3*index+i, ys[-1]+5,
-                     '%.1fM' % yvalue2(rl, rate, num, timeout), rotation='vertical')
+            #plt.text(3*index+i, 10,
+            #         '%.1fM' % yvalue2(rl, rate, num, timeout),
+            #         rotation='vertical',
+            #         fontsize=24)
             xlabels.append(str(num))
-        plt.bar(xs, ys, bar_width, label=rl, color=colours[i])
+        plt.bar(xs, ys, bar_width, label=get_label(rl), color=colours[i], hatch=get_hatch(rl))
         plt.xticks(xs, xlabels)
-    plt.grid()
+        plt.ylabel("CPU %")
+        plt.xlabel("Number of RLs")
+    plt.grid(True)
     plt.legend(loc="upper left")
-    plt.title("Vary # RLs for rate=100Mbps")
+    #plt.title("Vary # RLs for rate=100Mbps")
     plt.ylim((0,15))
     return
 
@@ -109,16 +137,18 @@ def vary_rate(timeout=timeout):
             xs.append(3*index + i)
             xlabels.append("%sG" % (rate/1000))
             ys.append(yvalue(rl, rate, timeout=timeout, cols="user,sirq,sys,hirq"))
-            plt.text(3*index+i, ys[-1]+5,
-                     '%.1fM' % yvalue2(rl, rate, timeout=timeout), rotation='vertical')
+            plt.text(3*index+i, 10,
+                     '%.1fM' % yvalue2(rl, rate, timeout=timeout),
+                     rotation='vertical',
+                     fontsize=24)
 
-        plt.bar(xs, ys, bar_width, label=rl, color=colours[i])
+        plt.bar(xs, ys, bar_width, label=get_label(rl), color=colours[i], hatch=get_hatch(rl))
         plt.xlabel("Rate")
-        plt.ylabel("CPU usage fraction")
+        plt.ylabel("CPU %")
         plt.xticks(xs, xlabels)
-    plt.grid()
+    plt.grid(True)
     plt.legend(loc="upper left")
-    plt.title("Vary rates for different RLs for perfiso")
+    #plt.title("Vary rates for different RLs for perfiso")
     plt.ylim((0,15))
     return
 
@@ -135,21 +165,28 @@ def vary_connections():
             xs.append(3*index + i)
             xlabels.append(str(P))
             ys.append(yvalue_P(rl, P, cols="user,sirq,sys,hirq"))
-            plt.text(3*index+i, ys[-1]+5,
-                     '%.1fM' % yvalue2_P(rl, P), rotation='vertical')
+            plt.text(3*index+i, 20,
+                     '%.1fM' % yvalue2_P(rl, P),
+                     rotation='vertical',
+                     fontsize=24)
 
-        plt.bar(xs, ys, bar_width, label=rl, color=colours[i])
+        plt.bar(xs, ys, bar_width, label=get_label(rl), color=colours[i], hatch=get_hatch(rl))
         plt.xlabel("Num TCP connections")
-        plt.ylabel("CPU usage")
+        plt.ylabel("CPU %")
         plt.xticks(xs, xlabels)
-    plt.grid()
+    plt.grid(True)
     plt.legend(loc="upper left")
-    plt.title("CPU usage for different number of parallel iperf sessions (bound to diff CPUs)")
+    #plt.title("CPU usage, parallel iperf sessions, bound to diff CPUs")
     plt.ylim((0,30))
     return
 
-vary_number()
-#vary_rate()
+if args.plot == "number":
+    vary_number()
+elif args.plot == "rate":
+    vary_rate()
 #vary_rate(timeout=timeout)
 #vary_connections()
-plt.show()
+if args.out:
+    plt.savefig(args.out)
+else:
+    plt.show()

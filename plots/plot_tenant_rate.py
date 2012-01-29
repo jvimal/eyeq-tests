@@ -4,6 +4,7 @@ from helper import *
 import os
 import glob
 import sys
+import plot_defaults
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--files', '-f',
@@ -12,6 +13,13 @@ parser.add_argument('--files', '-f',
                     action="store",
                     nargs='+',
                     dest="files")
+
+parser.add_argument('-l',
+                    help="Labels",
+                    required=True,
+                    action="store",
+                    nargs='+',
+                    dest="labels")
 
 parser.add_argument('--out', '-o',
                     help="Output png file for the plot.",
@@ -36,6 +44,12 @@ parser.add_argument('--title',
                     action="store",
                     dest="title")
 
+parser.add_argument('--rx',
+                    help="Plot just RX",
+                    default=False,
+                    action="store_true",
+                    dest="rx")
+
 parser.add_argument('--accum',
                     help="How many seconds to accumulate to compute average",
                     default=None,
@@ -43,9 +57,20 @@ parser.add_argument('--accum',
                     action="store",
                     dest="accum")
 
-m.rc('figure', figsize=(16, 6))
+parser.add_argument('--every',
+                    help="How often should the marker be placed?",
+                    default=5,
+                    type=int,
+                    action="store",
+                    dest="every")
+
 args = parser.parse_args()
 LOADGEN_OUTPUT = 'loadgen'
+
+cols = 2
+if args.rx:
+    cols = 1
+m.rc('figure', figsize=(cols * 8, 6))
 
 def parse_loadgen_file(f):
     dir = os.path.dirname(f)
@@ -81,7 +106,7 @@ def parse_file(f):
     for l in lines:
         if l.startswith('#'):
             continue
-        t, tid, tx, rx = l.split(',')
+        t, tid, rx, tx = l.split(',')
         t, tx, rx = map(float, [t, tx, rx])
         if start_time == 0:
             start_time = t
@@ -108,18 +133,25 @@ def accum(values):
             tot = 0
     return ret
 
+def get_marker(tid):
+    return 'so^v'[tid]
+
 # Plots either tx/rx for all tenants on a particular server (one tenant.txt file)
-def plot_rate(ax, data, dir="tx", title="Rate"):
+def plot_rate(ax, data, dir="tx", title=args.title, markevery=args.every):
     total = []
     TID = -1
     default_colours = 'grb'
     for tid in sorted(data.keys()):
-        #if tid != '11.0.1.1':
+        #if tid != '11.0.1.2':
         #    continue
         TID += 1
         xvalues = accum(data[tid]['t'])
         yvalues = accum(data[tid][dir])
-        ax.plot(xvalues, yvalues, lw=2, label=str(tid), color=default_colours[TID])
+        label = str(tid)
+        if args.labels:
+            label = args.labels[TID]
+        ax.plot(xvalues, yvalues, lw=2, label=label, color=default_colours[TID],
+                marker=get_marker(TID), markevery=markevery, markersize=15)
         if len(total) == 0:
             total = yvalues
         else:
@@ -133,17 +165,25 @@ def plot_rate(ax, data, dir="tx", title="Rate"):
     except:
         pass
     ax.set_title(title)
-    ax.grid()
+    ax.grid(True)
     ax.set_xlabel("Time (s)")
-    ax.set_ylabel("Mbps")
+    ax.set_ylabel("Rate")
     ax.set_ylim((0, 10001))
+    ax.set_yticks(range(1000, 10001, 2000))
+    ax.set_yticklabels(map(lambda e: '%dG' % (e/1000), range(1000, 10001, 2000)))
     return
 
 for f in args.files:
     data = parse_file(f)
     fig = plt.figure()
-    for col, dir in enumerate("tx,rx".split(',')):
-        ax = fig.add_subplot(1, 2, col)
-        plot_rate(ax, data, dir, title="%s rate" % dir)
+    for col, dir in enumerate("rx,tx".split(',')):
+        if col == "tx" and args.rx:
+            continue
+        ax = fig.add_subplot(1, cols, col)
+        plot_rate(ax, data, dir)
 
-plt.show()
+if args.out:
+    print 'saved to', args.out
+    plt.savefig(args.out)
+else:
+    plt.show()

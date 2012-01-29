@@ -1,3 +1,4 @@
+import plot_defaults
 from helper import *
 
 parser = argparse.ArgumentParser()
@@ -60,13 +61,13 @@ def yvalue2(rate, without=False, num=1):
     #pprint(perf)
     return data
 
-colours = default_colours
+colours = blue_colours
 bar_width=1
 bar_group=len(nums)+1
 cols = args.cols
 
 def plot_without(without=False):
-    alpha = 0.4
+    alpha = 1
     first = True
     for i, n in enumerate(nums):
         xs = []
@@ -84,16 +85,16 @@ def plot_without(without=False):
                          '%.1fM' % rate, rotation='vertical')
 
         if without == False:
-            plt.bar(xs, ys, bar_width, color=colours[i], alpha=alpha)
+            plt.bar(xs, ys, bar_width, color=colours[0], alpha=alpha, hatch='*')
         else:
-            plt.bar(xs, ys, bar_width, color=colours[i], label="4x%d" % n)#, alpha=alpha)
+            plt.bar(xs, ys, bar_width, color=colours[i], label="%d" % n)#, alpha=alpha)
         plt.xlabel("Rate")
-        plt.ylabel("CPU usage fraction")
+        plt.ylabel("CPU %")
         plt.xticks(xs, xlabels)
         if without == True:
             plt.legend(loc="upper left")
 
-    plt.title("CPU %s usage @ diff number of VQs/TCP connections.." % cols)
+    #plt.title("CPU %s usage @ diff number of VQs/TCP connections.." % cols)
     plt.ylim((0,args.maxy))
     plt.grid(True)
     return

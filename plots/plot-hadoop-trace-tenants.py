@@ -2,6 +2,7 @@ from helper import *
 import re
 from collections import defaultdict
 import glob
+import plot_defaults
 
 parser = argparse.ArgumentParser("Hadoop trace plotter.")
 parser.add_argument('--dirs', '-d',
@@ -13,6 +14,11 @@ parser.add_argument('-t', '--title',
                     dest='title',
                     default="Flow/Job completion times")
 
+parser.add_argument('-e', '--every',
+                    dest='every',
+                    action="store_true",
+                    default=False)
+
 parser.add_argument('--out', '-o',
                     dest='out',
                     default=None,
@@ -22,6 +28,9 @@ args = parser.parse_args()
 
 pat_start = re.compile(r'starting TCP flow seed (\d+).*size (\d+).*\-\-\-\s([\d\.]+)')
 pat_end = re.compile(r'ending TCP flow seed (\d+).*\-\-\-\s([\d\.]+)')
+
+def get_marker(tid):
+    return 'oxsv'[tid]
 
 def parse_fcts(f):
     flow_start = defaultdict(int)
@@ -84,23 +93,28 @@ for i,dir in enumerate(args.dirs):
             fcts = parse_fcts(os.path.join(d, "sort-%d.txt" % j))
             print fcts.values()
             all_values += fcts.values()
-            plot_cdf(fcts.values(), alpha=0.3, color=col)
-        plot_cdf(all_values, lw=4, color=col, label="P%s" % (2**j))
-        plt.axvline(x=max(all_values), ymin=0, ymax=1, ls='--', color=col)
+            if args.every:
+                plot_cdf(fcts.values(), alpha=0.3, color=col)
+        plot_cdf(all_values, lw=4, color=col, label="P%s" % (2**j),
+                 marker=get_marker(j), markersize=10, markevery=150)
+        plt.axvline(x=max(all_values), ymin=0, ymax=1, ls='--', color=col,
+                    marker=get_marker(j))
 
     #locs, labels = map(list, plt.xticks())
 
     #locs = locs[:-1] + [max(all_values)]
     #plt.xticks(locs, map(lambda e: '%.1f' % e, locs))
-    yticks = map(lambda e: (e/10.0), range(0, 11))
+    yticks = map(lambda e: (e/5.0), range(0, 6))
     plt.yticks(yticks, map(lambda e: '%.1f' % e, yticks))
+    xticks = range(0, 4001, 1000)
+    plt.xticks(xticks, map(str, xticks))
     #plt.figure()
 
 plt.title(args.title)
 plt.xlabel("Seconds")
 plt.ylabel("CDF/Fraction")
 plt.legend(loc="upper left")
-plt.grid()
+plt.grid(True)
 if args.out:
     plt.savefig(args.out)
 else:
