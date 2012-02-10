@@ -6,6 +6,10 @@
 #include <linux/atomic.h>
 #include <linux/kthread.h>
 #include <linux/delay.h>
+#include <linux/completion.h>
+#include <linux/slab.h>
+#include <linux/hrtimer.h>
+#include <linux/net.h>
 
 /* From wikipedia */
 inline u64 rdtsc(void) {
@@ -329,6 +333,89 @@ void perf_rdtsc(void) {
 	end(__FUNCTION__);
 }
 
+
+/*
+ * Stressing hrtimers
+ */
+
+struct timer_obj {
+	struct hrtimer timer;
+	ktime_t start;
+	ktime_t end;
+}*timers;
+
+DECLARE_COMPLETION(compl);
+atomic_t completed;
+int timer_latency[100];
+
+enum hrtimer_restart perf_timer_cb(struct hrtimer *timer) {
+	struct timer_obj *tobj = container_of(timer, struct timer_obj, timer);
+	tobj->end = ktime_get();
+
+	if(atomic_dec_and_test(&completed)) {
+		complete(&compl);
+	}
+
+	return HRTIMER_NORESTART;
+}
+
+void perf_timer(int n, int dt_ns) {
+	int i;
+	ktime_t timeout = ktime_set(0, dt_ns);
+	u64 latency_us;
+	int total = 0;
+
+	atomic_set(&completed, n);
+	timers = kmalloc(n * sizeof(struct timer_obj), GFP_KERNEL);
+	for(i = 0; i < 1000; i++)
+		timer_latency[i] = 0;
+
+	if(timers == NULL) {
+		printk(KERN_INFO "Timer initialisation failed\n");
+		return;
+	}
+
+	for(i = 0; i < n; i++) {
+		hrtimer_init(&timers[i].timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+		timers[i].timer.function = perf_timer_cb;
+	}
+
+	start();
+	for(i = 0; i < n; i++) {
+		timeout = ktime_set(0, dt_ns);// + net_random() % 1000);
+		timers[i].start = ktime_get();
+		hrtimer_start(&timers[i].timer, timeout, HRTIMER_MODE_REL);
+	}
+
+	wait_for_completion(&compl);
+	end(__FUNCTION__);
+
+	for(i = 0; i < n; i++) {
+		hrtimer_cancel(&timers[i].timer);
+		latency_us = ktime_us_delta(timers[i].end, timers[i].start);
+		if(latency_us >= 999)
+			latency_us = 999;
+		timer_latency[latency_us]++;
+	}
+
+	printk(KERN_INFO "Timer for %llu us, fires at\n", dt_ns);
+	for(i = 0; i < 1000; i++) {
+		if(timer_latency[i] > 0) {
+			total += timer_latency[i];
+			printk(KERN_INFO " %4d us: %5d\n", i, timer_latency[i]);
+		}
+	}
+	printk(KERN_INFO "Total timers: %d\n", total);
+
+	kfree(timers);
+}
+
+void perf_timer_long(int repeat) {
+	while(repeat--) {
+		perf_timer(8 * 1024, 10000);
+	}
+}
+
 static int __init microbench_register(void) {
 	perf_ktime_get();
 	perf_spinlock();
@@ -343,6 +430,7 @@ static int __init microbench_register(void) {
 	perf_thread_separate_atomic();
 	perf_thread_percpu_atomic();
 	perf_rdtsc();
+	perf_timer_long(100);
 	return -1;
 }
 
