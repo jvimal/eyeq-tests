@@ -50,6 +50,12 @@ parser.add_argument('--rx',
                     action="store_true",
                     dest="rx")
 
+parser.add_argument('--tx',
+                    help="Plot just tx",
+                    default=False,
+                    action="store_true",
+                    dest="tx")
+
 parser.add_argument('--accum',
                     help="How many seconds to accumulate to compute average",
                     default=None,
@@ -64,12 +70,26 @@ parser.add_argument('--every',
                     action="store",
                     dest="every")
 
+parser.add_argument('--range',
+                    help="Plot specific x-axis range (useful for zoom-in plots)",
+                    default=None,
+                    action="store",
+                    dest="range")
+
+parser.add_argument('--nototal',
+                    help="plot total",
+                    default=False,
+                    action="store_true",
+                    dest="nototal")
+
 args = parser.parse_args()
 LOADGEN_OUTPUT = 'loadgen'
 
 cols = 2
-if args.rx:
+if args.rx == True or args.tx == True:
     cols = 1
+    print 'cols = %d, tx/rx: %s/%s' % (cols, args.tx, args.rx)
+
 m.rc('figure', figsize=(cols * 8, 6))
 
 def parse_loadgen_file(f):
@@ -106,7 +126,7 @@ def parse_file(f):
     for l in lines:
         if l.startswith('#'):
             continue
-        t, tid, rx, tx = l.split(',')
+        t, tid, tx, rx = l.split(',')
         t, tx, rx = map(float, [t, tx, rx])
         if start_time == 0:
             start_time = t
@@ -136,6 +156,9 @@ def accum(values):
 def get_marker(tid):
     return 'so^v'[tid]
 
+def get_tid_from_ip(ip):
+    return int(ip.split('.')[2])
+
 # Plots either tx/rx for all tenants on a particular server (one tenant.txt file)
 def plot_rate(ax, data, dir="tx", title=args.title, markevery=args.every):
     total = []
@@ -144,7 +167,7 @@ def plot_rate(ax, data, dir="tx", title=args.title, markevery=args.every):
     for tid in sorted(data.keys()):
         #if tid != '11.0.1.2':
         #    continue
-        TID += 1
+        TID = get_tid_from_ip(tid)-1
         xvalues = accum(data[tid]['t'])
         yvalues = accum(data[tid][dir])
         label = str(tid)
@@ -157,7 +180,7 @@ def plot_rate(ax, data, dir="tx", title=args.title, markevery=args.every):
         else:
             total = map(sum, zip(total, yvalues))
 
-    if len(total):
+    if len(total) and not args.nototal:
         l = min(len(total), len(xvalues))
         ax.plot(xvalues[0:l], total[0:l], lw=2, label="total", color='b')
     try:
@@ -171,14 +194,23 @@ def plot_rate(ax, data, dir="tx", title=args.title, markevery=args.every):
     ax.set_ylim((0, 10001))
     ax.set_yticks(range(1000, 10001, 2000))
     ax.set_yticklabels(map(lambda e: '%dG' % (e/1000), range(1000, 10001, 2000)))
+    if args.range:
+        try:
+            lo,hi = map(float, args.range.split(':'))
+            ax.set_xlim((lo, hi))
+        except:
+            pass
     return
 
 for f in args.files:
     data = parse_file(f)
     fig = plt.figure()
     for col, dir in enumerate("rx,tx".split(',')):
-        if col == "tx" and args.rx:
+        if dir == "tx" and args.rx == True:
             continue
+        if dir == "rx" and args.tx == True:
+            continue
+        print 'plotting %s' % dir
         ax = fig.add_subplot(1, cols, col)
         plot_rate(ax, data, dir)
 
