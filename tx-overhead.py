@@ -65,7 +65,7 @@ parser.add_argument('--timeout',
                     dest="timeout",
                     action="store",
                     help="Timeout for perfiso token bucket (in nano seconds).",
-                    default=str(1000*1000))
+                    default=str(50*1000))
 
 parser.add_argument("--profile",
                     dest="profile",
@@ -173,6 +173,7 @@ class TxOverhead(Expt):
                                '-P': parallel,
                                '-c': ip,
                                '-B': h1.get_tenant_ip(i+1),
+                               'dir': self.opts("dir"),
                                '-t': self.opts('t')})
                 client = iperf.start_client(h1, cpu=cpu)
                 self.procs.append(client)
