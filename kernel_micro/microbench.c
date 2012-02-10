@@ -10,6 +10,8 @@
 #include <linux/slab.h>
 #include <linux/hrtimer.h>
 #include <linux/net.h>
+#include <linux/interrupt.h>
+#include <linux/delay.h>
 
 /* From wikipedia */
 inline u64 rdtsc(void) {
@@ -416,6 +418,267 @@ void perf_timer_long(int repeat) {
 	}
 }
 
+
+
+/*
+ * The goal is to increment all the dummy_q counters to a target value.
+ * Increments are done every timer callback.
+ * The timer enqueues tasklet which increments the counter.
+ *
+ * Strategies:
+ * per-queue, per-rl timer? (done)
+ * per-rl timer? (done)
+ * per-cpu timer?
+ * global timer?
+ * thread that sleeps for some microsec?  (same as global timer?...)
+ */
+struct dummy_q {
+	int counter;
+	struct hrtimer timer;
+	struct tasklet_struct tasklet;
+	struct completion compl;
+};
+
+struct dummy_rl {
+	struct __percpu dummy_q *q;
+
+	int counter;
+	struct hrtimer timer;
+	struct tasklet_struct tasklet;
+	struct completion compl;
+};
+
+struct dummy_rl *rls;
+ktime_t kt;
+int dt_us, nrl;
+struct task_struct *tasks[8];
+atomic_t thread_count;
+struct completion thread_complete;
+
+/* Queue based tasklet */
+void perf_tasklet(unsigned long _q) {
+	struct dummy_q *q = (struct dummy_q *)_q;
+	struct hrtimer *timer = &q->timer;
+
+	q->counter--;
+	hrtimer_add_expires(timer, kt);
+	hrtimer_restart(timer);
+}
+
+enum hrtimer_restart perf_timer_cb_perq(struct hrtimer *timer) {
+	struct dummy_q *q = container_of(timer, struct dummy_q, timer);
+	if(q->counter <= 0) {
+		complete(&q->compl);
+		return HRTIMER_NORESTART;
+	}
+
+	tasklet_schedule(&q->tasklet);
+	return HRTIMER_NORESTART;
+}
+
+/* RL based tasklet */
+void perf_rl_tasklet(unsigned long _rl) {
+	struct dummy_rl *rl = (struct dummy_rl *)_rl;
+	struct hrtimer *timer = &rl->timer;
+	int cpu;
+
+	rl->counter--;
+	for_each_online_cpu(cpu) {
+		struct dummy_q *q = per_cpu_ptr(rl->q, cpu);
+		q->counter--;
+	}
+
+	hrtimer_add_expires(timer, kt);
+	hrtimer_restart(timer);
+}
+
+enum hrtimer_restart perf_timer_cb_perrl(struct hrtimer *timer) {
+	struct dummy_rl *rl = container_of(timer, struct dummy_rl, timer);
+	if(rl->counter <= 0) {
+		complete(&rl->compl);
+		return HRTIMER_NORESTART;
+	}
+
+	tasklet_schedule(&rl->tasklet);
+	return HRTIMER_NORESTART;
+}
+
+int perf_timer_2_thread(void *_) {
+	int cpu = smp_processor_id();
+	int i;
+
+	kt = ktime_set(0, dt_us * 1000);
+
+	for(i = 0; i < nrl; i++) {
+		struct dummy_rl *rl = &rls[i];
+		struct dummy_q *q = per_cpu_ptr(rl->q, cpu);
+		hrtimer_start(&q->timer, kt, HRTIMER_MODE_REL);
+	}
+
+	for(i = 0; i < nrl; i++) {
+		struct dummy_rl *rl = &rls[i];
+		struct dummy_q *q = per_cpu_ptr(rl->q, cpu);
+		wait_for_completion(&q->compl);
+	}
+
+	if(atomic_dec_and_test(&thread_count))
+		complete(&thread_complete);
+
+	do_exit(0);
+	return 0;
+}
+
+int perf_timer_3_thread(void *_) {
+	int i;
+	int cpu = smp_processor_id();
+	int num_cpus = 8;
+
+	kt = ktime_set(0, dt_us * 1000);
+	for(i = cpu; i < nrl; i+=num_cpus) {
+		struct dummy_rl *rl = &rls[i];
+		hrtimer_start(&rl->timer, kt, HRTIMER_MODE_REL);
+	}
+
+	for(i = cpu; i < nrl; i+=num_cpus) {
+		struct dummy_rl *rl = &rls[i];
+		wait_for_completion(&rl->compl);
+	}
+
+	if(atomic_dec_and_test(&thread_count))
+		complete(&thread_complete);
+
+	do_exit(0);
+	return 0;
+}
+
+void perf_timer_2(int _nrl, int ntarget, int _dt_us) {
+	int i, nrlfree, cpu;
+	int num_cpus = 8;
+
+	printk(KERN_INFO "***************** nrl=%d, ntarget=%d, dt_us=%d\n", _nrl, ntarget, _dt_us);
+	dt_us = _dt_us;
+	nrl = _nrl;
+	/* Alloc rls */
+	rls = kmalloc(nrl * sizeof(struct dummy_rl), GFP_KERNEL);
+	if(rls == NULL) {
+		printk(KERN_INFO "Couldn't allocate dummy rate limiters\n");
+		return;
+	}
+
+	/* Init rls */
+	for(i = 0; i < nrl; i++) {
+		struct dummy_rl *rl = &rls[i];
+		rl->q = alloc_percpu(struct dummy_q);
+		hrtimer_init(&rl->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+		rl->timer.function = perf_timer_cb_perrl;
+		tasklet_init(&rl->tasklet, perf_rl_tasklet, (unsigned long)rl);
+		rl->counter = ntarget;
+		init_completion(&rl->compl);
+
+		if(rl->q == NULL) {
+			nrlfree = i-1;
+			goto free_rl;
+		}
+
+		for_each_online_cpu(cpu) {
+			struct dummy_q *q = per_cpu_ptr(rl->q, cpu);
+			q->counter = ntarget;
+			init_completion(&q->compl);
+			hrtimer_init(&q->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+			tasklet_init(&q->tasklet, perf_tasklet, (unsigned long)q);
+			q->timer.function = perf_timer_cb_perq;
+		}
+	}
+
+
+	/* Strat 1: per-queue per-RL timer */
+	printk(KERN_INFO "Timer per queue\n");
+	atomic_set(&thread_count, num_cpus);
+	init_completion(&thread_complete);
+
+	start();
+	for(i = 0; i < num_cpus; i++) {
+		tasks[i] = kthread_create(perf_timer_2_thread, (void *)NULL, "perf_kthread");
+		kthread_bind(tasks[i], i);
+	}
+
+	for(i = 0; i < num_cpus; i++) {
+		if(!IS_ERR(tasks[i]))
+			wake_up_process(tasks[i]);
+	}
+
+	wait_for_completion(&thread_complete);
+	end(__FUNCTION__);
+	mdelay(1);
+
+	/* Reset */
+	for(i = 0; i < nrl; i++) {
+		struct dummy_rl *rl = &rls[i];
+		rl->counter = ntarget;
+		hrtimer_cancel(&rl->timer);
+		tasklet_kill(&rl->tasklet);
+
+		for_each_online_cpu(cpu) {
+			struct dummy_q *q = per_cpu_ptr(rl->q, cpu);
+			q->counter = ntarget;
+			hrtimer_cancel(&q->timer);
+			tasklet_kill(&q->tasklet);
+		}
+	}
+
+	/* Strat 2: per-RL timer */
+	printk(KERN_INFO "Timer per RL\n");
+	atomic_set(&thread_count, num_cpus);
+	init_completion(&thread_complete);
+
+	start();
+	for(i = 0; i < num_cpus; i++) {
+		tasks[i] = kthread_create(perf_timer_3_thread, (void *)NULL, "perf_kthread");
+		kthread_bind(tasks[i], i);
+	}
+
+	for(i = 0; i < num_cpus; i++) {
+		if(!IS_ERR(tasks[i]))
+			wake_up_process(tasks[i]);
+	}
+
+	wait_for_completion(&thread_complete);
+	end(__FUNCTION__);
+	mdelay(1);
+
+	nrlfree = nrl;
+ free_rl:
+	for(i = 0; i < nrlfree; i++) {
+		struct dummy_rl *rl = &rls[i];
+
+		for_each_online_cpu(cpu) {
+			struct dummy_q *q = per_cpu_ptr(rl->q, cpu);
+			hrtimer_cancel(&q->timer);
+			tasklet_kill(&q->tasklet);
+		}
+
+		free_percpu(rl->q);
+		hrtimer_cancel(&rl->timer);
+		tasklet_kill(&rl->tasklet);
+	}
+
+	kfree(rls);
+}
+
+void perf_timers_test(void) {
+	int i, nrl = 128;
+	int j, ntarget = 10000;
+	int k, us = 100;
+
+	for(i = 64; i <= nrl; i *= 2) {
+		for(j = 10000; j <= ntarget; j += 1000) {
+			for(k = 10; k <= us; k += 10) {
+				perf_timer_2(i, j, k);
+			}
+		}
+	}
+}
+
 static int __init microbench_register(void) {
 	perf_ktime_get();
 	perf_spinlock();
@@ -431,6 +694,7 @@ static int __init microbench_register(void) {
 	perf_thread_percpu_atomic();
 	perf_rdtsc();
 	perf_timer_long(100);
+	perf_timers_test();
 	return -1;
 }
 
