@@ -34,6 +34,7 @@ class Iperf:
             cmd = "taskset -c %d %s" % (cpu, cmd)
         if self.opts.get('start_udp', None):
             cmd = "sleep %s; " % self.opts.get('start_udp') + cmd
+        cmd = "mkdir -p %s; %s" % (self.opts.get("dir", "/tmp"), cmd)
         host.cmd_async(cmd)
         return self
 
