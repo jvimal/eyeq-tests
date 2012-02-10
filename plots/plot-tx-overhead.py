@@ -9,7 +9,7 @@ parser.add_argument('-o', '--out',
 
 parser.add_argument('-p',
                     dest="plot",
-                    choices=["number","rate"],
+                    choices=["number","rate", "conn"],
                     default="number")
 
 args = parser.parse_args()
@@ -181,11 +181,15 @@ def vary_connections():
     return
 
 if args.plot == "number":
-    vary_number()
+    try:
+        vary_number(timeout=timeout)
+    except:
+        vary_number()
 elif args.plot == "rate":
     vary_rate()
+elif args.plot == "conn":
 #vary_rate(timeout=timeout)
-#vary_connections()
+    vary_connections()
 if args.out:
     plt.savefig(args.out)
 else:
