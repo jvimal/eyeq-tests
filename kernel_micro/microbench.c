@@ -398,7 +398,7 @@ void perf_timer(int n, int dt_ns) {
 		timer_latency[latency_us]++;
 	}
 
-	printk(KERN_INFO "Timer for %llu us, fires at\n", dt_ns);
+	printk(KERN_INFO "Timer for %d us, fires at\n", dt_ns);
 	for(i = 0; i < 1000; i++) {
 		if(timer_latency[i] > 0) {
 			total += timer_latency[i];
