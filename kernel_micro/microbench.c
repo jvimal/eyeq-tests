@@ -531,16 +531,16 @@ int perf_timer_2_thread(void *_) {
 int perf_timer_3_thread(void *_) {
 	int i;
 	int cpu = smp_processor_id();
-	int num_cpus = 8;
+	int num_cpus = 8, len = nrl/num_cpus;
 
 	kt = ktime_set(0, dt_us * 1000);
-	for(i = cpu; i < nrl; i+=num_cpus) {
-		struct dummy_rl *rl = &rls[i];
+	for(i = 0; i < len; i++) {
+		struct dummy_rl *rl = &rls[cpu * len + i];
 		hrtimer_start(&rl->timer, kt, HRTIMER_MODE_REL);
 	}
 
-	for(i = cpu; i < nrl; i+=num_cpus) {
-		struct dummy_rl *rl = &rls[i];
+	for(i = 0; i < len; i++) {
+		struct dummy_rl *rl = &rls[cpu * len + i];
 		wait_for_completion(&rl->compl);
 	}
 
