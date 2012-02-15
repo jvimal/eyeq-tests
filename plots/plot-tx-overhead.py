@@ -17,6 +17,7 @@ args = parser.parse_args()
 rates = [1000, 3000, 6000, 9000]
 rls = ['htb', 'perfiso']
 num = 64
+nums = [8, 16, 32, 48, 64, 92]
 rates = [100]
 timeout=500*1000
 
@@ -101,6 +102,7 @@ def get_label(rl):
     return rl
 
 def vary_number(timeout=None):
+    global nums
     rate = 100
     xlabels = []
     fig = plt.figure()
@@ -108,7 +110,7 @@ def vary_number(timeout=None):
         xs = []
         ys = []
         xlabels = []
-        for index, num in enumerate([8, 16, 32, 64, 128]):
+        for index, num in enumerate(nums):
             xs.append(3*index + i)
             ys.append(yvalue(rl, rate, num, timeout=timeout, cols="user,sirq,sys,hirq"))
             #plt.text(3*index+i, 10,
