@@ -452,6 +452,7 @@ struct dummy_rl {
 struct dummy_rl *rls;
 ktime_t kt;
 int dt_us = 10, nrl = 32, ntarget = 10000;
+int dt_work = 1;
 struct task_struct *tasks[8];
 
 struct percpu_block {
@@ -463,12 +464,24 @@ struct percpu_block {
 atomic_t thread_count;
 struct completion thread_complete;
 
+inline void perf_work(void) {
+	ktime_t start = ktime_get(), now;
+	while(1) {
+		now = ktime_get();
+		if(unlikely(ktime_us_delta(now, start) >= dt_work))
+			break;
+		cpu_relax();
+	}
+	return;
+}
+
 /* Queue based tasklet */
 void perf_tasklet(unsigned long _q) {
 	struct dummy_q *q = (struct dummy_q *)_q;
 	struct hrtimer *timer = &q->timer;
 
 	q->counter--;
+	perf_work();
 	hrtimer_add_expires(timer, kt);
 	hrtimer_restart(timer);
 }
@@ -494,6 +507,7 @@ void perf_rl_tasklet(unsigned long _rl) {
 	for_each_online_cpu(cpu) {
 		struct dummy_q *q = per_cpu_ptr(rl->q, cpu);
 		q->counter--;
+		perf_work();
 	}
 
 	hrtimer_add_expires(timer, kt);
@@ -521,6 +535,7 @@ void perf_cpu_tasklet(unsigned long cpu) {
 		struct dummy_rl *rl = &rls[i];
 		struct dummy_q *q = per_cpu_ptr(rl->q, cpu);
 		q->counter--;
+		perf_work();
 		if(q->counter <= 0)
 			ok = 1;
 	}
@@ -622,6 +637,7 @@ int perf_timer_5_thread(void *_) {
 			struct dummy_rl *rl = &rls[i];
 			struct dummy_q *q = per_cpu_ptr(rl->q, cpu);
 			q->counter--;
+			perf_work();
 			if(q->counter <= 0)
 				ok = 1;
 		}
@@ -639,7 +655,8 @@ void perf_timer_2(void) {
 	int i, nrlfree, cpu;
 	int num_cpus = 8;
 
-	printk(KERN_INFO "***************** nrl=%d, ntarget=%d, dt_us=%d\n", nrl, ntarget, dt_us);
+	dt_work = dt_us/10;
+	printk(KERN_INFO "***************** nrl=%d, ntarget=%d, dt_us=%d, dt_work=%d\n", nrl, ntarget, dt_us, dt_work);
 	/* Alloc rls */
 	rls = kmalloc(nrl * sizeof(struct dummy_rl), GFP_KERNEL);
 	if(rls == NULL) {
@@ -814,6 +831,9 @@ void perf_timer_2(void) {
 
 	kfree(rls);
 }
+
+MODULE_PARM_DESC(dt_us, "Work time (us, default: 1)");
+module_param(dt_work, int, 0);
 
 MODULE_PARM_DESC(dt_us, "Timer interval (us, default: 10)");
 module_param(dt_us, int, 0);
