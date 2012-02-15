@@ -82,6 +82,12 @@ def grouper(n, iterable, fillvalue=None):
     args = [iter(iterable)] * n
     return itertools.izip_longest(fillvalue=fillvalue, *args)
 
+def first(l):
+    return l[0]
+
+def second(l):
+    return l[1]
+
 def cdf(values):
     values.sort()
     prob = 0
