@@ -84,7 +84,7 @@ class HadoopTrace(Expt):
         n = args.nhadoop-1
         for i in xrange(args.nhadoop):
             self.hlist.create_ip_tenant(HADOOP_TID+i)
-        self.hlist.setup_tenant_routes()
+        self.hlist.setup_tenant_routes(args.nhadoop+1)
 
     def get_hadoop_P(self, i):
         return 3**i
