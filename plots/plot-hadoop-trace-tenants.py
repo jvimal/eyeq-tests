@@ -24,6 +24,12 @@ parser.add_argument('--out', '-o',
                     default=None,
                     help="Output plot to file")
 
+parser.add_argument('--base', '-b',
+                    dest='base',
+                    type=int,
+                    default=3,
+                    help="# Connections are powers of this base")
+
 args = parser.parse_args()
 
 pat_start = re.compile(r'starting TCP flow seed (\d+).*size (\d+).*\-\-\-\s([\d\.]+)')
@@ -95,7 +101,7 @@ for i,dir in enumerate(args.dirs):
             all_values += fcts.values()
             if args.every:
                 plot_cdf(fcts.values(), alpha=0.3, color=col)
-        plot_cdf(all_values, lw=4, color=col, label="P%s" % (2**j),
+        plot_cdf(all_values, lw=4, color=col, label="P%s" % (args.base**j),
                  marker=get_marker(j), markersize=10, markevery=150)
         plt.axvline(x=max(all_values), ymin=0, ymax=1, ls='--', color=col,
                     marker=get_marker(j))
