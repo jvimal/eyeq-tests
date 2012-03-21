@@ -143,16 +143,7 @@ class TxOverhead(Expt):
         hlist.cmd("killall -9 iperf; iptables -F")
 
         self.log("Starting CPU/bandwidth monitors")
-        # Start monitors
-        m = multiprocessing.Process(target=monitor_cpu, args=("%s/cpu.txt" % self.opts('dir'),))
-        self.start_monitor(m)
-        m = multiprocessing.Process(target=monitor_bw, args=("%s/net.txt" % self.opts('dir'),))
-        self.start_monitor(m)
-        #if self.opts("perf"):
-        #    m = multiprocessing.Process(target=monitor_perf,
-        #                                args=("%s/perf.txt" % self.opts('dir'), self.opts('t')))
-        #    self.start_monitor(m)
-
+        self.hlist.start_monitors(self.opts("dir"))
         h1.setup_tenant_routes()
         self.log("Starting %d iperfs" % n)
         # Start iperfs servers

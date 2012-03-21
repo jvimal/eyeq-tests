@@ -12,6 +12,12 @@ parser.add_argument('-p',
                     choices=["number","rate", "conn"],
                     default="number")
 
+parser.add_argument('--text',
+                    dest="text",
+                    default=False,
+                    help="Include rate text in the figure",
+                    action="store_true")
+
 args = parser.parse_args()
 
 rates = [1000, 3000, 6000, 9000]
@@ -113,10 +119,11 @@ def vary_number(timeout=None):
         for index, num in enumerate(nums):
             xs.append(3*index + i)
             ys.append(yvalue(rl, rate, num, timeout=timeout, cols="user,sirq,sys,hirq"))
-            #plt.text(3*index+i, 10,
-            #         '%.1fM' % yvalue2(rl, rate, num, timeout),
-            #         rotation='vertical',
-            #         fontsize=24)
+            if args.text:
+                plt.text(3*index+i, 10,
+                         '%.1fM' % yvalue2(rl, rate, num, timeout),
+                         rotation='vertical',
+                         fontsize=24)
             xlabels.append(str(num))
         plt.bar(xs, ys, bar_width, label=get_label(rl), color=colours[i], hatch=get_hatch(rl))
         plt.xticks(xs, xlabels)
@@ -139,10 +146,11 @@ def vary_rate(timeout=timeout):
             xs.append(3*index + i)
             xlabels.append("%sG" % (rate/1000))
             ys.append(yvalue(rl, rate, timeout=timeout, cols="user,sirq,sys,hirq"))
-            plt.text(3*index+i, 10,
-                     '%.1fM' % yvalue2(rl, rate, timeout=timeout),
-                     rotation='vertical',
-                     fontsize=24)
+            if args.text:
+                plt.text(3*index+i, 10,
+                         '%.1fM' % yvalue2(rl, rate, timeout=timeout),
+                         rotation='vertical',
+                         fontsize=24)
 
         plt.bar(xs, ys, bar_width, label=get_label(rl), color=colours[i], hatch=get_hatch(rl))
         plt.xlabel("Rate")
@@ -167,10 +175,11 @@ def vary_connections():
             xs.append(3*index + i)
             xlabels.append(str(P))
             ys.append(yvalue_P(rl, P, cols="user,sirq,sys,hirq"))
-            plt.text(3*index+i, 20,
-                     '%.1fM' % yvalue2_P(rl, P),
-                     rotation='vertical',
-                     fontsize=24)
+            if args.text:
+                plt.text(3*index+i, 20,
+                         '%.1fM' % yvalue2_P(rl, P),
+                         rotation='vertical',
+                         fontsize=24)
 
         plt.bar(xs, ys, bar_width, label=get_label(rl), color=colours[i], hatch=get_hatch(rl))
         plt.xlabel("Num TCP connections")
