@@ -25,6 +25,14 @@ inline u64 rdtsc(void) {
 	return (u64)hi << 32 | lo;
 }
 
+inline u64 rdtsc_alone(void) {
+	u32 lo, hi;
+    /* We cannot use "=A", since this would use %rax on x86_64 and
+	   return only the lower 32bits of the TSC */
+    __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
+	return (u64)hi << 32 | lo;
+}
+
 ktime_t kstart, kend;
 u64 rstart, rend;
 spinlock_t global_lock;
@@ -59,16 +67,18 @@ void end(const char *fn) {
 }
 
 void perf_ktime_get(void) {
-	ktime_t read;
+	volatile ktime_t read;
 	int i;
-	u64 read_64;
 
 	start();
 	for(i = 0; i < times; i++) {
 		read = ktime_get();
-	    read_64 = *(u64 *)&read;
-		read_64++;
 	}
+	end(__FUNCTION__);
+
+	start();
+	for(i = 0; i < times; i++)
+		asm ("nop");
 	end(__FUNCTION__);
 }
 
@@ -333,6 +343,64 @@ void perf_rdtsc(void) {
 		val += rdtsc();
 	}
 	end(__FUNCTION__);
+}
+
+void perf_rdtsc_alone(void) {
+	int i;
+	u64 val;
+
+	start();
+	for(i = 0; i < times; i++) {
+		val += rdtsc_alone();
+	}
+	end(__FUNCTION__);
+}
+
+u64 val[1000];
+void perf_rdtsc_loop(void) {
+	int i;
+	u64 a, b;
+
+	for(i = 0; i < 1000; i++) {
+		a = rdtsc_alone();
+		b = rdtsc_alone();
+		val[i] = b - a;
+	}
+	printk(KERN_INFO "Loop rdtsc: %s\n", __FUNCTION__);
+	for(i = 0; i < 1000; i++)
+		printk(KERN_INFO "val[%d] = %llu\n", i, val[i]);
+}
+
+void perf_ktimeget_loop(void) {
+	int i;
+	u64 a, b;
+	volatile ktime_t ret;
+
+	for(i = 0; i < 1000; i++) {
+		a = rdtsc_alone();
+		ret = ktime_get();
+		b = rdtsc_alone();
+		val[i] = b - a;
+	}
+
+	printk(KERN_INFO "Loop ktime_get: %s\n", __FUNCTION__);
+	for(i = 0; i < 100; i++)
+		printk(KERN_INFO "val[%d] = %llu\n", i, val[i]);
+}
+
+void perf_ktimeget_loop2(void) {
+	int i;
+	volatile ktime_t ret1, ret2;
+
+	for(i = 0; i < 1000; i++) {
+		ret1 = ktime_get();
+		ret2 = ktime_get();
+		val[i] = ktime_sub(ret2, ret1).tv64;
+	}
+
+	printk(KERN_INFO "Loop ktime_get: %s\n", __FUNCTION__);
+	for(i = 0; i < 100; i++)
+		printk(KERN_INFO "val[%d] = %llu\n", i, val[i]);
 }
 
 
@@ -858,10 +926,19 @@ static int __init microbench_register(void) {
 	perf_thread_shared_int();
 	perf_thread_separate_atomic();
 	perf_thread_percpu_atomic();
-	perf_rdtsc();
-	perf_timer_long(100);
 #endif
+	perf_rdtsc();
+	perf_rdtsc_alone();
+	perf_rdtsc_loop();
+	perf_ktimeget_loop();
+	perf_ktimeget_loop2();
+
+	perf_ktime_get();
+
+	/*
+	perf_timer_long(100);
 	perf_timer_2();
+	*/
 	return -1;
 }
 
