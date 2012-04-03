@@ -15,7 +15,7 @@ echo exptid $exptid
 
 for mtu in 9000; do
 for size in 10T; do
-for iso in "" "--enable" "--weighted"; do
+for iso in "" "--enable" "--weighted" "--inv-weighted"; do
 for nhadoop in 3; do
 	subdir=size$size-iso$iso-mtu$mtu-nhadoop$nhadoop
 	python tests/test_hadoop_trace.py --mtu 9000 \

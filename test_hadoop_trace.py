@@ -50,6 +50,12 @@ parser.add_argument("--weighted",
                     help="Enable perfiso, but with weights?",
                     default=False)
 
+parser.add_argument("--inv-weighted",
+                    dest="inv_weighted",
+                    action="store_true",
+                    help="Enable perfiso, but with inverse weights?",
+                    default=False)
+
 parser.add_argument('--dir',
                     dest="dir",
                     default="/tmp")
@@ -92,6 +98,9 @@ class HadoopTrace(Expt):
             w = 1
             if self.opts("weighted"):
                 w = self.get_hadoop_P(i)
+            if self.opts("inv_weighted"):
+                w = self.get_hadoop_P(args.nhadoop - i - 1)
+
             self.hlist.create_ip_tenant(HADOOP_TID+i, w)
         self.hlist.setup_tenant_routes(args.nhadoop+1)
 
@@ -185,7 +194,7 @@ class HadoopTrace(Expt):
             sys.exit(0)
 
         self.hlist.set_mtu(self.opts("mtu"))
-        if self.opts("enabled") or self.opts("weighted"):
+        if self.opts("enabled") or self.opts("weighted") or self.opts("inv_weighted"):
             self.hlist.insmod()
         self.create_tenants()
         self.hlist.start_monitors(self.opts("dir"))
