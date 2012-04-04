@@ -19,7 +19,7 @@ for rate in 1000 3000 6000 9000; do
 	done
 done
 
-pushd $dir
+pushd $dir/..
 python2.6 ~/iso/tests/plots/plot-rx-overhead.py --maxy 45 -o rx.png
 popd
 

@@ -21,6 +21,12 @@ parser.add_argument('-o',
                     default=None,
                     dest="out")
 
+parser.add_argument('--text',
+                    help="Plot rate text on the graph",
+                    default=False,
+                    action="store_true",
+                    dest="text")
+
 args = parser.parse_args()
 
 rates = [1000, 3000, 6000, 9000]
@@ -61,7 +67,7 @@ def yvalue2(rate, without=False, num=1):
     #pprint(perf)
     return data
 
-colours = blue_colours
+colours = blue_colours + ['black']
 bar_width=1
 bar_group=len(nums)+1
 cols = args.cols
@@ -80,7 +86,7 @@ def plot_without(without=False):
             xlabels.append("%sG" % (rate/1000))
             ys.append(yvalue(rate, num=n, without=without, cols=cols))
             rate = yvalue2(rate, num=n, without=without)
-            if without == False:
+            if without == False and args.text:
                 plt.text(xindex, ys[-1] + 10,
                          '%.1fM' % rate, rotation='vertical')
 
