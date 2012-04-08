@@ -27,8 +27,14 @@ parser.add_argument('--out', '-o',
 parser.add_argument('--base', '-b',
                     dest='base',
                     type=int,
-                    default=3,
+                    default=2,
                     help="# Connections are powers of this base")
+
+parser.add_argument('--maxx',
+                    dest="maxx",
+                    type=int,
+                    default=4000,
+                    help="Max x axis (seconds)")
 
 args = parser.parse_args()
 
@@ -112,7 +118,7 @@ for i,dir in enumerate(args.dirs):
     #plt.xticks(locs, map(lambda e: '%.1f' % e, locs))
     yticks = map(lambda e: (e/5.0), range(0, 6))
     plt.yticks(yticks, map(lambda e: '%.1f' % e, yticks))
-    xticks = range(0, 4001, 1000)
+    xticks = range(0, args.maxx+1, 1000)
     plt.xticks(xticks, map(str, xticks))
     #plt.figure()
 
