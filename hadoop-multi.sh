@@ -30,6 +30,7 @@ done
 pushd ~/vimal/10g/exptdata/$exptid
 for dir in *; do
 	python2.6 ~/iso/tests/plots/plot-hadoop-trace-tenants.py --dirs $dir --out $dir.png
+	python2.6 ~/iso/tests/plots/plot-hadoop-trace-tenants.py --dirs $dir --out $dir.eps
 done
 popd
 
