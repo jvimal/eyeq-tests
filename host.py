@@ -347,6 +347,12 @@ class Host(object):
         c += " echo e > $dir/rps_cpus; done"
         self.cmd(c % dev)
 
+    def configure_tx_interrupt_affinity(self):
+        dev = self.get_10g_dev()
+        c = "n=`grep '%s-tx' /proc/interrupts | awk -F ':' '{print $1}' | tr -d '\\n '`; " % dev
+        c += " echo 0 > /proc/irq/$n/smp_affinity; "
+        self.cmd(c)
+
     # Monitoring scripts
     def start_cpu_monitor(self, dir="/tmp"):
         dir = os.path.abspath(dir)
