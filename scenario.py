@@ -86,6 +86,11 @@ parser.add_argument('--vqrate',
                     help="VQ drain rate in Mbps",
                     default="9000")
 
+parser.add_argument('--aimd_dt_us',
+                    dest="aimd_dt_us",
+                    help="AI/MD dt in microsec.  Default 500us",
+                    default="500")
+
 args = parser.parse_args()
 
 def indent(s, depth=1, char='\t'):
@@ -125,6 +130,7 @@ scen.add("tcpvsudp", TcpVsUdp(t=args.time, enabled=args.enabled,
                               P=args.P, n=args.n, dir=args.dir, wtcp=args.wtcp,
                               mtu=args.mtu, vqupdate=args.vqupdate,
                               vqrate=args.vqrate,
+                              aimd_dt_us=args.aimd_dt_us,
                               start_udp=args.start_udp, traffic=args.traffic))
 scen.add("udp", Udp(t=args.time, enabled=args.enabled,
                     P=args.P, dir=args.dir, start_udp=args.start_udp))
