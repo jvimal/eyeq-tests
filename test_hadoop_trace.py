@@ -73,6 +73,11 @@ parser.add_argument('--nhadoop', '-n',
                     type=int,
                     default=1)
 
+parser.add_argument('--base',
+                    dest="base",
+                    type=int,
+                    default=2)
+
 parser.add_argument('--static',
                     dest="static",
                     action="store_true",
@@ -105,7 +110,7 @@ class HadoopTrace(Expt):
         self.hlist.setup_tenant_routes(args.nhadoop+1)
 
     def get_hadoop_P(self, i):
-        return 3**i
+        return self.opts("base")**i
 
     def start_hadoop(self, i, P=1):
         # Create loadgen file
@@ -194,6 +199,7 @@ class HadoopTrace(Expt):
             sys.exit(0)
 
         self.hlist.set_mtu(self.opts("mtu"))
+        self.hlist.configure_tx_interrupt_affinity()
         if self.opts("enabled") or self.opts("weighted") or self.opts("inv_weighted"):
             self.hlist.insmod()
         self.create_tenants()
