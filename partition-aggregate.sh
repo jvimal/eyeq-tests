@@ -18,15 +18,18 @@ trap ctrlc SIGINT
 
 echo exptid $exptid
 
+for base in 1 2; do
 for size in 10K 100K 1M; do
 for iso in "" "--enable"; do
-	subdir=paggr-size$size-iso$iso
+	subdir=paggr-size$size-iso$iso-base$base
 	python tests/test_partition_aggregate.py -n $ntenant \
 		--size $size \
 		--dir /tmp/$exptid/$subdir \
 		--exptid $exptid \
 		--repeat 30000 \
+		--base $base \
 		$iso $cpubind
+done
 done
 done
 
