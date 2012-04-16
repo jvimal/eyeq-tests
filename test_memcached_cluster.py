@@ -70,6 +70,12 @@ parser.add_argument('--active',
                     help="Which tenants are active? (udp/mem/udp,mem)",
                     default="udp,mem")
 
+parser.add_argument('--nconn',
+                    dest="nconn",
+                    help="Number of active connections per memcached server",
+                    type=int,
+                    default=128)
+
 args = parser.parse_args()
 MEMASLAP_TID = 1
 LOADGEN_TID = 2
@@ -108,7 +114,7 @@ class MemcachedCluster(Expt):
         cmd = "mkdir -p %s; " % dir
         cmd += "memaslap -s %s " % servers
         cmd += "-S 1s -t %ss " % time
-        cmd += "-c 512 -T 4 -B -F %s " % config
+        cmd += "-c %s -T 4 -B -F %s " % (self.opts("nconn") * len(self.hs.lst), config)
         cmd += " > %s/memaslap.txt" % dir
         host.cmd_async(cmd)
 
