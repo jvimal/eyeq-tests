@@ -1,5 +1,6 @@
 import plot_defaults
 from helper import *
+import math
 
 parser = argparse.ArgumentParser()
 
@@ -27,10 +28,16 @@ parser.add_argument('--text',
                     action="store_true",
                     dest="text")
 
+parser.add_argument('--dirs',
+                    help="Directories to read output from",
+                    default=['.'],
+                    nargs="+",
+                    dest="dirs")
+
 args = parser.parse_args()
 
 rates = [1000, 3000, 6000, 9000]
-nums = [1, 8, 16, 32, 64, 128]
+nums = [1, 8, 16, 32, 64, 92]
 
 def dir_param(rate, without=False, num=1):
     dir = "r%s-n%d" % (rate, num)
@@ -40,8 +47,8 @@ def dir_param(rate, without=False, num=1):
         dir = "rx-with/" + dir
     return dir
 
-def yvalue(rate, without=False, num=1, cols="sirq"):
-    dir = dir_param(rate, without, num)
+def yvalue(rate, without=False, num=1, cols="sirq", rootdir="."):
+    dir = rootdir + "/" + dir_param(rate, without, num)
     data = parse_cpu_usage(os.path.join(dir, "cpu.txt"))
     data = transpose(data)
     data = map(lambda d: avg(d[10:]), data)
@@ -57,8 +64,8 @@ def yvalue(rate, without=False, num=1, cols="sirq"):
         ret += data[col]
     return ret
 
-def yvalue2(rate, without=False, num=1):
-    dir = dir_param(rate, without, num)
+def yvalue2(rate, without=False, num=1, rootdir="."):
+    dir = rootdir + "/" + dir_param(rate, without, num)
     data = parse_rate_usage(os.path.join(dir, "net.txt"),
                             ifaces=["eth2"], dir="rx", divider=(1 << 20))
     data = avg(data["eth2"][30:])
@@ -72,6 +79,14 @@ bar_width=1
 bar_group=len(nums)+1
 cols = args.cols
 
+def avg(l):
+    return sum(l) * 1.0 /len(l)
+
+def stdev(l):
+    m = avg(l)
+    dev = map(lambda x: (x - m)**2, l)
+    return math.sqrt(avg(dev))
+
 def plot_without(without=False):
     alpha = 1
     first = True
@@ -79,21 +94,27 @@ def plot_without(without=False):
         xs = []
         xlabels = []
         ys = []
+        yerrs = []
         xindex = i
         for rate in rates:
             xindex += bar_group
             xs.append(xindex)
             xlabels.append("%sG" % (rate/1000))
-            ys.append(yvalue(rate, num=n, without=without, cols=cols))
-            rate = yvalue2(rate, num=n, without=without)
+            temp_ys = []
+            for dir in args.dirs:
+                print dir
+                temp_ys.append(yvalue(rate, num=n, without=without, cols=cols, rootdir=dir))
+            ys.append(avg(temp_ys))
+            yerrs.append(stdev(temp_ys))
+            #rate = yvalue2(rate, num=n, without=without, rootdir=args.dir)
             if without == False and args.text:
                 plt.text(xindex, ys[-1] + 10,
                          '%.1fM' % rate, rotation='vertical')
 
         if without == False:
-            plt.bar(xs, ys, bar_width, color=colours[0], alpha=alpha, hatch='*')
+            plt.bar(xs, ys, bar_width, color=colours[0], alpha=alpha, hatch='*', yerr=yerrs, ecolor='purple')
         else:
-            plt.bar(xs, ys, bar_width, color=colours[i], label="%d" % n)#, alpha=alpha)
+            plt.bar(xs, ys, bar_width, color=colours[i], label="%d" % n, yerr=yerrs, ecolor="black")#, alpha=alpha)
         plt.xlabel("Rate")
         plt.ylabel("CPU %")
         plt.xticks(xs, xlabels)
