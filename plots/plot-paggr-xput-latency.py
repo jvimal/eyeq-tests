@@ -22,8 +22,15 @@ parser.add_argument('--bin',
                     default=1e-3,
                     help="bin size for CDF")
 
+maxx = {
+    '10K': 0.02,
+    '100K': 0.02,
+    '1M': 0.4,
+}
+
 args = parser.parse_args()
 pat_usec = re.compile(r'sec: ([0-9]+), usec: ([0-9]+)')
+pat_size = re.compile(r'size([0-9]+[KM])-')
 
 def parse_fcts(f):
     print 'Parsing file %s' % f
@@ -67,18 +74,26 @@ def plot_cdf(values, bin_sec=0.001, **kwargs):
 
 dir = os.path.join(args.dir, "l1")
 print "searching in %s" % dir
-for i,f in enumerate(glob.glob(dir + "/paggr*.txt")):
+max_x = 0.02
+
+for i,f in enumerate(sorted(glob.glob(dir + "/paggr*.txt"))):
     try:
         fcts = parse_fcts(f)
     except:
         print 'could not parse %s' % f
         continue
     #print fcts
+    m = pat_size.search(f)
+    if m:
+        size = m.group(1)
+        max_x = maxx[size]
+
     if len(fcts):
         filename = os.path.basename(f)
         plot_cdf(fcts, bin_sec=args.bin, lw=2, label=filename)
 
 plt.title(args.title)
+plt.xlim((0, max_x))
 plt.xlabel("Seconds")
 plt.ylabel("CDF/Fraction")
 plt.legend(loc="upper left")
