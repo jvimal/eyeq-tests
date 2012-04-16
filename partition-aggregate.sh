@@ -7,6 +7,8 @@ ntenant=2
 cpubind=""
 # cpubind="--bind"
 
+set -e
+
 ctrlc() {
 	killall -9 python
 	exit
@@ -24,7 +26,7 @@ for iso in "" "--enable"; do
 		--dir /tmp/$exptid/$subdir \
 		--exptid $exptid \
 		--repeat 30000 \
-		$iso $cpubind \
+		$iso $cpubind
 done
 done
 
@@ -40,11 +42,11 @@ for ext in pdf png; do
 
 	python2.6 ~/iso/tests/plots/plot_rate.py \
 		-f $dir/l1/net.txt \
-		-o graphs/$ext/txrate.$ext
+		-o graphs/$ext/txrate-$dir.$ext
 
 	python2.6 ~/iso/tests/plots/plot_rate.py \
 		-f $dir/l1/net.txt \
-		-o graphs/$ext/rxrate.$ext \
+		-o graphs/$ext/rxrate-$dir.$ext \
 		--rx
 
 done
@@ -54,3 +56,4 @@ popd
 echo $start $exptid
 echo `date`
 
+exit 0

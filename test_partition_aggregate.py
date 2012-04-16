@@ -112,11 +112,11 @@ class PartitionAggregate(Expt):
             cmd = "mkdir -p %s; " % dir
             if args.bind:
                 cmd += "taskset -c %s,%s  " % (cpu, cpu+1)
-            cmd += " %s %s" % (cpu, cpu+1, SERVER, ip)
+            cmd += " %s %s" % (SERVER, ip)
             h.cmd_async(cmd)
 
         print "Waiting for servers to start..."
-        progress(10)
+        progress(1)
         print "starting client (tid=%s) on %s..." % (tid, host_ips[0])
         h0 = Host(host_ips[0])
 

@@ -76,7 +76,7 @@ for i,f in enumerate(glob.glob(dir + "/paggr*.txt")):
     #print fcts
     if len(fcts):
         filename = os.path.basename(f)
-        plot_cdf(fcts, bin_sec=args.bin, lw=2, label="Tenant %s" % i)
+        plot_cdf(fcts, bin_sec=args.bin, lw=2, label=filename)
 
 plt.title(args.title)
 plt.xlabel("Seconds")
