@@ -32,6 +32,10 @@ parser.add_argument('--log',
                     default=True,
                     dest="log")
 
+parser.add_argument('--out', '-o',
+                    default=None,
+                    dest="out")
+
 args = parser.parse_args()
 if args.legend is None:
     args.legend = args.files
@@ -127,4 +131,8 @@ m.rc('figure', figsize=(16, 6))
 fig = plt.figure()
 plot_ops(fig.add_subplot(1, 2, 1))
 plot_latency(fig.add_subplot(1, 2, 2))
-plt.show()
+
+if args.out:
+    plt.savefig(args.out)
+else:
+    plt.show()
