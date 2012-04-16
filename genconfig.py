@@ -32,7 +32,7 @@ parser.add_argument('-P',
 
 parser.add_argument('--traffic',
                     dest="traffic",
-                    choices=["fullmesh", "incast", "sort", "hotspot"],
+                    choices=["fullmesh", "incast", "sort", "hotspot", "paggr"],
                     default="incast")
 
 parser.add_argument('--pattern',
@@ -226,6 +226,25 @@ def hotspot():
             print out
     return
 
+def partition_aggregate():
+    # One client, N-1 servers
+    # client requires input file.  Server doesn't
+    n = args.n
+    size = parse_size(args.size)
+    P = args.P
+    repeat = args.repeat
+    tenant = args.tenant
+    print "bindaddress %s" % Host(pick_host_ip(0)).get_tenant_ip(tenant)
+    print "destinations %d" % n
+    for i in xrange(n):
+        hi = Host(pick_host_ip(i+1)).get_tenant_ip(tenant)
+        for j in xrange(P):
+            print "0 dest %s %s -1" % (hi, 5001)
+    print "size %s" % size
+    print "iterations %s" % repeat
+    print "l25 0"
+    return
+
 if args.traffic == "fullmesh":
     fullmesh()
 elif args.traffic == "incast":
@@ -234,3 +253,5 @@ elif args.traffic == "sort":
     fullmesh(sort=True)
 elif args.traffic == "hotspot":
     hotspot()
+elif args.traffic == "paggr":
+    partition_aggregate()
