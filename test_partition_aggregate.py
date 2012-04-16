@@ -68,6 +68,11 @@ parser.add_argument('--size',
                     dest="size",
                     default='10K')
 
+parser.add_argument('--bind',
+                    dest="bind",
+                    action="store_true",
+                    default=False)
+
 # tenant ids
 TID = 1
 
@@ -105,7 +110,9 @@ class PartitionAggregate(Expt):
         for h in self.hlist.lst:
             ip = h.get_tenant_ip(tid)
             cmd = "mkdir -p %s; " % dir
-            cmd += "taskset -c %s,%s   %s %s" % (cpu, cpu+1, SERVER, ip)
+            if args.bind:
+                cmd += "taskset -c %s,%s  " % (cpu, cpu+1)
+            cmd += " %s %s" % (cpu, cpu+1, SERVER, ip)
             h.cmd_async(cmd)
 
         print "Waiting for servers to start..."
@@ -125,7 +132,9 @@ class PartitionAggregate(Expt):
         outfile = os.path.join(dir, out)
 
         cmd = 'mkdir -p %s; ' % dir
-        cmd += "taskset -c %s,%s  %s %s > %s" % (cpu, cpu+1, CLIENT, inpfile, outfile)
+        if args.bind:
+            cmd += "taskset -c %s,%s  " % (cpu, cpu+1)
+        cmd += " %s %s > %s" % (CLIENT, inpfile, outfile)
         h0.cmd_async(cmd)
         return
 
