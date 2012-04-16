@@ -235,7 +235,7 @@ def partition_aggregate():
     repeat = args.repeat
     tenant = args.tenant
     print "bindaddress %s" % Host(pick_host_ip(0)).get_tenant_ip(tenant)
-    print "destinations %d" % n
+    print "destinations %d" % (n * int(P))
     for i in xrange(n):
         hi = Host(pick_host_ip(i+1)).get_tenant_ip(tenant)
         for j in xrange(P):
