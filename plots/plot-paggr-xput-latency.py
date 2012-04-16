@@ -65,7 +65,7 @@ def plot_cdf(values, bin_sec=0.001, **kwargs):
     plt.plot(cdf_x, fracs, **kwargs)
     return
 
-dir = os.path.join(args.dir, "paggr", "l1")
+dir = os.path.join(args.dir, "l1")
 print "searching in %s" % dir
 for i,f in enumerate(glob.glob(dir + "/paggr*.txt")):
     try:
