@@ -36,6 +36,11 @@ parser.add_argument('--out', '-o',
                     default=None,
                     dest="out")
 
+parser.add_argument('--mcperf',
+                    default=False,
+                    action="store_true",
+                    dest="mcperf")
+
 args = parser.parse_args()
 if args.legend is None:
     args.legend = args.files
@@ -70,16 +75,40 @@ def parse_ops(f):
 
     return state_values
 
+def parse_ops_mcperf(f):
+    pat_reqr = re.compile(r'Request rate: ([0-9\.]+) req/s')
+    pat_rspr = re.compile(r'Response rate: ([0-9\.]+) rsp/s')
+    lines = open(f).readlines()
+    reqr = 0
+    rspr = 0
+    for l in lines:
+        m = pat_reqr.search(l)
+        if m:
+            reqr = float(m.group(1))
+        # resp
+        m = pat_rspr.search(l)
+        if m:
+            rspr = float(m.group(1))
+    return (reqr, rspr)
+
 def plot_ops(ax):
+    i = -1
+    colours="bgr"
     for f,leg in zip(args.files, args.legend):
+        i += 1
         if '/' in leg:
             leg = os.path.basename(leg)
-        values = parse_ops(f)
-        ys = values['total']
-        ax.plot(ys, lw=2, label=leg)
+        if args.mcperf:
+            reqr, rspr = parse_ops_mcperf(f)
+            ax.bar([i+0.0], [reqr], 0.25, label="Req/sec %s" % (leg), color=colours[i])
+            ax.bar([i+0.25], [rspr], 0.25, label="Resp/sec %s" % (leg), color=colours[i], alpha=0.5)
+        else:
+            values = parse_ops(f)
+            ys = values['total']
+            ax.plot(ys, lw=2, label=leg)
+            ax.set_xlabel("Samples")
     ax.grid()
     ax.legend(loc="lower right")
-    ax.set_xlabel("Samples")
     ax.set_ylabel("Ops/sec")
     ax.set_ylim(ymin=0)
     ax.set_title(args.ops_title)
@@ -114,9 +143,46 @@ def parse_latency(f):
     yvalues_pdf = map(lambda e: e * 1.0 / sum, yvalues_pdf)
     return (xvalues, yvalues_cdf, yvalues_pdf)
 
+pat_mcperf = re.compile(r'([\d\.]+) (\d+)')
+def parse_latency_mcperf(f):
+    lines = open(f).readlines()
+    skip = 0
+    xvalues = []
+    yvalues_cdf = []
+    yvalues_pdf = []
+    sum = 0
+
+    for l in lines:
+        if skip == 0 and "Response time histogram [ms]" in l:
+            skip = 1
+            continue
+
+        # Parse
+        l = l.strip()
+        if l == ":":
+            continue
+        if "Response time [ms]: p25" in l:
+            break
+
+        m = pat_mcperf.search(l)
+        if m:
+            lo, num = m.group(1), m.group(2)
+            #print lo, hi, num
+            lo = float(lo)
+            xvalues.append(int(lo * 1e3))
+            sum += int(num)
+            yvalues_cdf.append(sum)
+            yvalues_pdf.append(int(num))
+    yvalues_cdf = map(lambda e: e * 1.0 / sum, yvalues_cdf)
+    yvalues_pdf = map(lambda e: e * 1.0 / sum, yvalues_pdf)
+    return (xvalues, yvalues_cdf, yvalues_pdf)
+
 def plot_latency(ax):
     for f,leg in zip(args.files, args.legend):
-        x, yc, yp = parse_latency(f)
+        if args.mcperf:
+            x, yc, yp = parse_latency_mcperf(f)
+        else:
+            x, yc, yp = parse_latency(f)
         ax.plot(x, yc, lw=2, label=leg)
 
     ax.grid()

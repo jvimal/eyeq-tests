@@ -76,6 +76,28 @@ parser.add_argument('--nconn',
                     type=int,
                     default=128)
 
+parser.add_argument('--mcperf',
+                    dest="mcperf",
+                    help="Use mcperf instead of memaslap",
+                    action="store_true",
+                    default=False)
+
+parser.add_argument('--mcexp',
+                    dest="mcexp",
+                    help="inter-req arrival time exponential",
+                    action="store_true",
+                    default=False)
+
+parser.add_argument('--mcsize',
+                    dest="mcsize",
+                    help="mcperf: Size of requests",
+                    default="1000")
+
+parser.add_argument('--mcrate',
+                    dest="mcrate",
+                    help="mcperf: Request generation rate",
+                    default="6000")
+
 args = parser.parse_args()
 MEMASLAP_TID = 1
 LOADGEN_TID = 2
@@ -111,12 +133,42 @@ class MemcachedCluster(Expt):
             servers.append("%s:11211" % ip)
         servers = ",".join(servers)
 
-        cmd = "mkdir -p %s; " % dir
+        cmd = "rm -rf %s; mkdir -p %s; " % (dir, dir)
         cmd += "memaslap -s %s " % servers
         cmd += "-S 1s -t %ss " % time
         cmd += "-c %s -T 4 -B -F %s " % (self.opts("nconn") * len(self.hs.lst), config)
         cmd += " > %s/memaslap.txt" % dir
         host.cmd_async(cmd)
+
+    def mcperf(self, host, dir="/tmp"):
+        time = int(self.opts("t")) - 5
+        if "mem" not in self.opts("active"):
+            return
+        servers = []
+        host.cmd("rm -rf %s; mkdir -p %s;" % (dir, dir))
+
+        if self.opts("mcexp"):
+            rate = "e%.5f" % (1.0 / float(self.opts("mcrate")))
+        else:
+            rate = self.opts("mcrate")
+
+        for tid, h in enumerate(self.hs.lst):
+            ip = h.get_10g_ip()
+            if self.opts("enable"):
+                ip = h.get_tenant_ip(MEMASLAP_TID)
+
+            N = int(self.opts("mcrate")) * time
+            workload = "get"
+            if "set" in self.opts("memaslap"):
+                workload = "set"
+
+            cmd = "(mcperf -s %s " % (ip)
+            cmd += "-N %s -R %s " % (N, rate)
+            cmd += "-z d%s " % (self.opts("mcsize"))
+            cmd += "-H -m %s -T %s " % (workload, time)
+            cmd += "> %s/mcperf-%s-%s.txt); " % (dir, tid, ip)
+            host.cmd_async(cmd)
+        return
 
     def loadgen(self, host, traffic=None, dir="/tmp"):
         if traffic is None:
@@ -184,11 +236,15 @@ class MemcachedCluster(Expt):
         #hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", 8500)
         #hlist.perfiso_set("ISO_VQ_UPDATE_INTERVAL_US", 25)
         self.prepare_iface()
+        self.hlist.setup_tenant_routes(2)
 
         hservers.start_memcached()
         sleep(2)
         for h in hclients.lst:
-            self.memaslap(h, dir)
+            if args.mcperf:
+                self.mcperf(h, dir)
+            else:
+                self.memaslap(h, dir)
         hlist.start_monitors(dir)
 
         for h in hlist.lst:
@@ -196,7 +252,7 @@ class MemcachedCluster(Expt):
         self.loadgen_start()
 
     def stop(self):
-        self.hlist.killall("memslap memcached loadgen")
+        self.hlist.killall("memcached loadgen")
         self.hlist.remove_tenants()
         self.hlist.copy("l1", self.opts("dir"), self.opts("exptid"))
         return

@@ -50,8 +50,9 @@ for mtu in 9000; do
 					--memaslap $workload \
 					--exptid $exptid \
 					--traffic ~/vimal/exports/loadfiles/$traffic \
-          --nconn 16 \
-					--active $active
+					--nconn 16 \
+					--active $active \
+					--mcperf --mcsize 6000 --mcrate 6000 --mcexp
 			done
 		done
 	done
@@ -63,12 +64,24 @@ for ext in eps png pdf; do
     work=`basename $workload`;
     echo $work
     mkdir -p graphs/$ext;
-    python2.6 ~/iso/tests/plots/plot-memcached-stats.py -f \
-        memcached-mtu9000-iso--enable-work$work-activemem/l5/memaslap.txt \
-        memcached-mtu9000-iso--enable-work$work-activeudp,mem/l5/memaslap.txt \
-        memcached-mtu9000-iso-work$work-activeudp,mem/l5/memaslap.txt \
-        --legend mem udp,mem+EyeQ udp,mem-without-EyeQ \
-        -o graphs/$ext/$work.$ext;
+
+	# Use this for memaslap
+	files=memaslap.txt
+	extra=""
+
+	# Use this for mcperf
+	files="mcperf-0-*.txt mcperf-1-*.txt mcperf-2-*.txt mcperf-3-*.txt"
+	extra="--mcperf"
+
+	for file in $files; do
+		echo $file
+		python2.6 ~/iso/tests/plots/plot-memcached-stats.py -f \
+			memcached-mtu9000-iso--enable-work$work-activemem/l5/$file \
+			memcached-mtu9000-iso--enable-work$work-activeudp,mem/l5/$file \
+			memcached-mtu9000-iso-work$work-activeudp,mem/l5/$file \
+			--legend mem udp,mem+EyeQ udp,mem-without-EyeQ \
+			-o graphs/$ext/$work-$file.$ext $extra;
+	done
 
     # RX/TX rates for one server/client for mem and mem,udp active tenants
     for tenants in mem udp,mem; do
