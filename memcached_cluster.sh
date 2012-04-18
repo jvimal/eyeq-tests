@@ -74,11 +74,11 @@ for ext in eps png pdf; do
     for tenants in mem udp,mem; do
       python2.6 ~/iso/tests/plots/plot_tenant_rate.py \
           --files memcached-mtu9000-iso--enable-work$work-active$tenants/l1/tenant.txt \
-          -o graphs/$ext/rate$workload-server-$tenants.$ext -l mem udp
+          -o graphs/$ext/rate$work-server-$tenants.$ext -l mem udp
 
       python2.6 ~/iso/tests/plots/plot_tenant_rate.py \
           --files memcached-mtu9000-iso--enable-work$work-active$tenants/l5/tenant.txt \
-          -o graphs/$ext/rate$workload-client-$tenants.$ext -l mem udp
+          -o graphs/$ext/rate$work-client-$tenants.$ext -l mem udp
     done
 done
 done
