@@ -98,6 +98,12 @@ parser.add_argument('--mcrate',
                     help="mcperf: Request generation rate",
                     default="6000")
 
+parser.add_argument('--static',
+                    dest="static",
+                    action="store_true",
+                    help="Static bandwidth for UDP",
+                    default=False)
+
 args = parser.parse_args()
 MEMASLAP_TID = 1
 LOADGEN_TID = 2
@@ -105,8 +111,13 @@ LOADGEN_TID = 2
 class MemcachedCluster(Expt):
     def initialise(self):
         self.hlist.rmmod()
+        self.hlist.remove_qdiscs()
         if self.opts("enable"):
             self.hlist.insmod()
+        # Create a static rate limiter for UDP tenant
+        if self.opts("static"):
+            for h in self.hlist.lst:
+                h.create_ip_tx_rl(ip=h.get_tenant_ip(LOADGEN_TID), rate='5Gbit', static=True)
 
     def prepare_iface(self):
         h = self.hlist
