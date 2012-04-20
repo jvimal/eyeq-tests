@@ -72,6 +72,11 @@ parser.add_argument('--start',
                     dest="start",
                     default="20.0")
 
+parser.add_argument('--stagger',
+                    dest="stagger",
+                    type=float,
+                    default=0.0)
+
 args = parser.parse_args()
 if args.on_off:
     try:
@@ -113,7 +118,8 @@ def fullmesh(sort=False):
     seed = 0
     P = args.P
     size = parse_size(args.size)
-    start = args.start
+    start = float(args.start)
+    stagger = float(args.stagger)
     duration = parse_duration(args.duration)
     inter = parse_duration(args.inter)
     repeat = args.repeat
@@ -136,9 +142,11 @@ def fullmesh(sort=False):
         hi = pick_10g_ip(i)
         if args.tenant:
             hi = Host(pick_host_ip(i)).get_tenant_ip(args.tenant)
+        idx = -1
         for j in xrange(n):
             if i == j:
                 continue
+            idx += 1
             for p in xrange(P):
                 seed += 1
                 hj = pick_10g_ip(j)
@@ -146,7 +154,7 @@ def fullmesh(sort=False):
                     hj = Host(pick_host_ip(j)).get_tenant_ip(args.tenant)
                 out = "%s %s " % (hi, hj)
                 out += "%s %s %s " % (port, type, seed)
-                out += "%s %s " % (start, time)
+                out += "%.3f %s " % (start + idx*stagger, time)
                 out += "%s exact " % size
                 out += "%s %.6f exact " % (repeat, inter)
                 out += "%.6f " % duration
