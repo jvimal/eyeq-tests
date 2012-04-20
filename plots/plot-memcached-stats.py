@@ -2,6 +2,7 @@ from helper import *
 import plot_defaults
 from collections import defaultdict
 import re
+from matplotlib.font_manager import FontProperties
 
 parser = argparse.ArgumentParser("Memcached stats plotter.")
 
@@ -94,7 +95,7 @@ def parse_ops_mcperf(f):
 
 def plot_ops(ax):
     i = -1
-    colours="bgr"
+    colours=["blue", "green", "red", "magenta"]
     for f,leg in zip(args.files, args.legend):
         i += 1
         if '/' in leg:
@@ -109,7 +110,9 @@ def plot_ops(ax):
             ax.plot(ys, lw=2, label=leg)
             ax.set_xlabel("Samples")
     ax.grid()
-    ax.legend(loc="lower right")
+    fontP = FontProperties()
+    fontP.set_size('small')
+    ax.legend(loc="lower right", prop=fontP)
     ax.set_ylabel("Ops/sec")
     ax.set_ylim(ymin=0)
     ax.set_title(args.ops_title)
@@ -180,7 +183,9 @@ def parse_latency_mcperf(f):
 
 def plot_latency(ax):
     i = -1
-    ls = ['-', '--', '-.']
+    ls = ['-', '--', '-.', ':']
+    colours=["blue", "green", "red", "magenta"]
+
     for f,leg in zip(args.files, args.legend):
         i += 1
         leg = leg.replace('-without-EyeQ', '')
@@ -188,10 +193,12 @@ def plot_latency(ax):
             x, yc, yp = parse_latency_mcperf(f)
         else:
             x, yc, yp = parse_latency(f)
-        ax.plot(x, yc, lw=4, label=leg, ls=ls[i])#, marker='so^v'[i], markersize=15, markevery=300)
+        ax.plot(x, yc, lw=4, label=leg, ls=ls[i], color=colours[i])#, marker='so^v'[i], markersize=15, markevery=300)
 
     ax.grid()
-    ax.legend(loc="lower right")
+    fontP = FontProperties()
+    fontP.set_size('x-large')
+    ax.legend(loc="lower right", prop=fontP)
     ax.set_xlabel("Latency (us)")
     ax.set_ylabel("CDF")
     ax.set_title(args.latency_title)
