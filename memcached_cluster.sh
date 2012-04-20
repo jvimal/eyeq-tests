@@ -60,7 +60,7 @@ done
 
 pushd ../exptdata/$exptid
 for workload in ~/vimal/exports/memcached_cluster/*; do
-for ext in eps png pdf; do
+for ext in png pdf; do
     work=`basename $workload`;
     echo $work
     mkdir -p graphs/$ext;
