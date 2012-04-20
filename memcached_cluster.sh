@@ -28,7 +28,7 @@ python tests/genconfig.py --traffic fullmesh \
 # Both tenants executed alone without interference
 
 for mtu in 9000; do
-	for iso in "" "--enable"; do
+	for iso in "" "--enable" "--static"; do
 		for workload in ~/vimal/exports/memcached_cluster/*; do
 			for active in udp mem udp,mem; do
 				work=`basename $workload`
@@ -78,8 +78,9 @@ for ext in png pdf; do
 		python2.6 ~/iso/tests/plots/plot-memcached-stats.py -f \
 			memcached-mtu9000-iso--enable-work$work-activemem/l5/$file \
 			memcached-mtu9000-iso--enable-work$work-activeudp,mem/l5/$file \
+			memcached-mtu9000-iso--static-work$work-activeudp,mem/l5/$file \
 			memcached-mtu9000-iso-work$work-activeudp,mem/l5/$file \
-			--legend mem udp,mem+EyeQ udp,mem-without-EyeQ \
+			--legend mem udp,mem+EyeQ udp,mem-static udp,mem-without-EyeQ \
 			-o graphs/$ext/$work-$file.$ext $extra;
 	done
 
@@ -98,4 +99,6 @@ done
 
 echo `date` $exptid
 echo -e $dirs
+popd
 
+echo memcached_cluster  $exptid >> TODO
