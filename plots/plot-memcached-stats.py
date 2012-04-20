@@ -1,4 +1,5 @@
 from helper import *
+import plot_defaults
 from collections import defaultdict
 import re
 
@@ -178,12 +179,16 @@ def parse_latency_mcperf(f):
     return (xvalues, yvalues_cdf, yvalues_pdf)
 
 def plot_latency(ax):
+    i = -1
+    ls = ['-', '--', '-.']
     for f,leg in zip(args.files, args.legend):
+        i += 1
+        leg = leg.replace('-without-EyeQ', '')
         if args.mcperf:
             x, yc, yp = parse_latency_mcperf(f)
         else:
             x, yc, yp = parse_latency(f)
-        ax.plot(x, yc, lw=2, label=leg)
+        ax.plot(x, yc, lw=4, label=leg, ls=ls[i])#, marker='so^v'[i], markersize=15, markevery=300)
 
     ax.grid()
     ax.legend(loc="lower right")
