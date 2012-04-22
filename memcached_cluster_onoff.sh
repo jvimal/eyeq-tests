@@ -50,9 +50,8 @@ for mtu in 9000; do
 					--memaslap $workload \
 					--exptid $exptid \
 					--traffic ~/vimal/exports/loadfiles/$traffic \
-					--nconn 16 \
 					--active $active \
-					--mcperf --mcsize 6000 --mcrate 6000 --mcexp
+					--mcperf --mcsize 6000 --mcrate 3000 --mcexp --nconn 10
 			done
 		done
 	done
@@ -77,10 +76,11 @@ for ext in png pdf; do
 		echo $file
 		python2.6 ~/iso/tests/plots/plot-memcached-stats.py -f \
 			memcached-mtu9000-iso--enable-work$work-activemem/l5/$file \
+			memcached-mtu9000-iso-work$work-activemem/l5/$file \
 			memcached-mtu9000-iso--enable-work$work-activeudp,mem/l5/$file \
 			memcached-mtu9000-iso--static-work$work-activeudp,mem/l5/$file \
 			memcached-mtu9000-iso-work$work-activeudp,mem/l5/$file \
-			--legend mem udp,mem+EyeQ udp,mem-static udp,mem-without-EyeQ \
+			--legend mem+EyeQ   mem   udp,mem+EyeQ   udp,mem-static   udp,mem-without-EyeQ \
 			-o graphs/$ext/$work-$file.$ext $extra;
 	done
 
@@ -101,4 +101,4 @@ echo `date` $exptid
 echo -e $dirs
 popd
 
-echo memcached_cluster_onoff $exptid >> TODO
+echo memcached_cluster_onoff $exptid 3000 rps 10 conn >> TODO

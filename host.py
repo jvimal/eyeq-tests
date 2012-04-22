@@ -449,3 +449,9 @@ class Host(object):
     def set_mtu(self, mtu):
         dev = self.get_10g_dev()
         self.cmd("ifconfig %s mtu %s" % (dev, mtu))
+
+    def netstat_begin(self, dir):
+        self.cmd("netstat -s > %s/netstat_begin.txt" % dir)
+
+    def netstat_end(self, dir):
+        self.cmd("netstat -s > %s/netstat_end.txt" % dir)

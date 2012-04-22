@@ -157,11 +157,14 @@ class MemcachedCluster(Expt):
             return
         servers = []
         host.cmd("rm -rf %s; mkdir -p %s;" % (dir, dir))
+        nconn =  self.opts("nconn")
+        mcrate = self.opts("mcrate")
 
         if self.opts("mcexp"):
-            rate = "e%.5f" % (1.0 / float(self.opts("mcrate")))
+            rate = "e%.5f" % (1.0 / (float(mcrate) / nconn))
         else:
-            rate = self.opts("mcrate")
+            # Divide rate equally among subconnections
+            rate = int(mcrate) / nconn
 
         for tid, h in enumerate(self.hs.lst):
             ip = h.get_10g_ip()
@@ -177,6 +180,7 @@ class MemcachedCluster(Expt):
             cmd += "-N %s -R %s " % (N, rate)
             cmd += "-z d%s " % (self.opts("mcsize"))
             cmd += "-H -m %s -T %s " % (workload, time)
+            cmd += "-n %s --conn-rate %s " % (nconn, nconn)
             cmd += "> %s/mcperf-%s-%s.txt); " % (dir, tid, ip)
             host.cmd_async(cmd)
         return
@@ -250,6 +254,7 @@ class MemcachedCluster(Expt):
         self.hlist.setup_tenant_routes(2)
 
         hservers.start_memcached()
+        self.hlist.netstat_begin(self.opts("dir"))
         sleep(2)
         for h in hclients.lst:
             if args.mcperf:
@@ -263,6 +268,7 @@ class MemcachedCluster(Expt):
         self.loadgen_start()
 
     def stop(self):
+        self.hlist.netstat_end(self.opts("dir"))
         self.hlist.killall("memcached loadgen")
         self.hlist.remove_tenants()
         self.hlist.copy("l1", self.opts("dir"), self.opts("exptid"))

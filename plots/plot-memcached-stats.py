@@ -95,7 +95,7 @@ def parse_ops_mcperf(f):
 
 def plot_ops(ax):
     i = -1
-    colours=["blue", "green", "red", "magenta"]
+    colours=["blue", "orange", "green", "red", "magenta"]
     for f,leg in zip(args.files, args.legend):
         i += 1
         if '/' in leg:
@@ -183,8 +183,8 @@ def parse_latency_mcperf(f):
 
 def plot_latency(ax):
     i = -1
-    ls = ['-', '--', '-.', ':']
-    colours=["blue", "green", "red", "magenta"]
+    ls = ['-', '-', '--', '-.', ':']
+    colours=["blue", "orange", "green", "red", "magenta"]
 
     for f,leg in zip(args.files, args.legend):
         i += 1
