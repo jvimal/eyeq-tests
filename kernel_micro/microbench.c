@@ -82,6 +82,16 @@ void perf_ktime_get(void) {
 	end(__FUNCTION__);
 }
 
+void perf_test_and_set_bit(void) {
+	unsigned long addr = 0;
+	int i;
+	start();
+	for(i = 0; i < times; i++) {
+		addr = test_and_set_bit(1, &addr);
+	}
+	end(__FUNCTION__);
+}
+
 void perf_spinlock_irq(void) {
 	unsigned long flags;
 	spinlock_t lock;
@@ -926,7 +936,6 @@ static int __init microbench_register(void) {
 	perf_thread_shared_int();
 	perf_thread_separate_atomic();
 	perf_thread_percpu_atomic();
-#endif
 	perf_rdtsc();
 	perf_rdtsc_alone();
 	perf_rdtsc_loop();
@@ -934,7 +943,9 @@ static int __init microbench_register(void) {
 	perf_ktimeget_loop2();
 
 	perf_ktime_get();
+#endif
 
+	perf_test_and_set_bit();
 	/*
 	perf_timer_long(100);
 	perf_timer_2();
