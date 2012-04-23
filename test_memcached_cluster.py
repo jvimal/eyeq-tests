@@ -254,14 +254,15 @@ class MemcachedCluster(Expt):
         self.hlist.setup_tenant_routes(2)
 
         hservers.start_memcached()
-        self.hlist.netstat_begin(self.opts("dir"))
         sleep(2)
         for h in hclients.lst:
             if args.mcperf:
                 self.mcperf(h, dir)
             else:
                 self.memaslap(h, dir)
+
         hlist.start_monitors(dir)
+        self.hlist.netstat_begin(self.opts("dir"))
 
         for h in hlist.lst:
             self.loadgen(h, xtraffic, dir)
