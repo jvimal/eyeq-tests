@@ -70,6 +70,11 @@ parser.add_argument('--active',
                     help="Which tenants are active? (udp/mem/udp,mem)",
                     default="udp,mem")
 
+parser.add_argument('--vqrate',
+                    dest="vqrate",
+                    help="VQ drain rate",
+                    default="9000")
+
 parser.add_argument('--nconn',
                     dest="nconn",
                     help="Number of active connections per memcached server",
@@ -248,7 +253,7 @@ class MemcachedCluster(Expt):
         self.initialise()
         # Automatically initialised by the module
         #hlist.perfiso_set("IsoAutoGenerateFeedback", "1")
-        #hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", 8500)
+        hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", self.opts("vqrate"))
         #hlist.perfiso_set("ISO_VQ_UPDATE_INTERVAL_US", 25)
         self.prepare_iface()
         self.hlist.setup_tenant_routes(2)
