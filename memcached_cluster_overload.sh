@@ -79,6 +79,10 @@ for ext in png pdf; do
 done
 done
 
+for dir in mem*; do
+	python ~/iso/tests/calc-timeouts.py --dir $dir/l5 > $dir/timeouts_l5.txt
+done
+
 echo `date` $exptid
 echo -e $dirs
 popd
