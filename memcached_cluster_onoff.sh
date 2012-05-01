@@ -57,6 +57,7 @@ for mtu in 9000; do
 	done
 done
 
+sys=CloudSwitch
 pushd ../exptdata/$exptid
 for workload in ~/vimal/exports/memcached_cluster/*; do
 for ext in png pdf; do
@@ -75,13 +76,15 @@ for ext in png pdf; do
 	for file in $files; do
 		echo $file
 		python2.6 ~/iso/tests/plots/plot-memcached-stats.py -f \
-			memcached-mtu9000-iso--enable-work$work-activemem/l5/$file \
 			memcached-mtu9000-iso-work$work-activemem/l5/$file \
-			memcached-mtu9000-iso--enable-work$work-activeudp,mem/l5/$file \
-			memcached-mtu9000-iso--static-work$work-activeudp,mem/l5/$file \
+			memcached-mtu9000-iso--enable-work$work-activemem/l5/$file \
 			memcached-mtu9000-iso-work$work-activeudp,mem/l5/$file \
-			--legend mem+EyeQ   mem   udp,mem+EyeQ   udp,mem-static   udp,mem-without-EyeQ \
+			memcached-mtu9000-iso--enable-work$work-activeudp,mem/l5/$file \
+			--legend baremetal   +$sys   udp,mem   udp,mem+$sys   \
 			-o graphs/$ext/$work-$file.$ext $extra;
+
+			#memcached-mtu9000-iso--static-work$work-activeudp,mem/l5/$file \
+
 	done
 
     # RX/TX rates for one server/client for mem and mem,udp active tenants

@@ -201,7 +201,7 @@ def plot_latency(ax):
     ax.legend(loc="lower right", prop=fontP)
     ax.set_xlabel("Latency (us)")
     ax.set_ylabel("CDF")
-    ax.set_title(args.latency_title)
+    #ax.set_title(args.latency_title)
     if args.log:
         ax.set_xscale("log")
 
