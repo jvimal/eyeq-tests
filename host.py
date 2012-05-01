@@ -368,10 +368,10 @@ class Host(object):
         cmd = "bwm-ng -t %s -o csv -u bits -T rate -C ',' > %s" % (interval_sec * 1000, path)
         return self.cmd_async(cmd)
 
-    def start_tenant_monitor(self, dir="/tmp"):
+    def start_tenant_monitor(self, dir="/tmp", interval=1e8):
         dir = os.path.abspath(dir)
         path = os.path.join(dir, "tenant.txt")
-        cmd = "~/vimal/exports/pimonitor > %s" % path
+        cmd = "~/vimal/exports/pimonitor %s > %s" % (int(interval), path)
         return self.cmd_async(cmd)
 
     def start_perf_monitor(self, dir="/tmp", time=30):
@@ -397,10 +397,10 @@ class Host(object):
         cmd = "(perf stat -e %s -a sleep %d) > %s 2>&1" % (events, time, path)
         return self.cmd_async(cmd)
 
-    def start_monitors(self, dir="/tmp"):
+    def start_monitors(self, dir='/tmp', interval=1e8):
         return [self.start_cpu_monitor(dir),
                 self.start_bw_monitor(dir),
-                self.start_tenant_monitor(dir)]
+                self.start_tenant_monitor(dir, interval)]
 
     def copy(self, dest="l1", dir="/tmp", exptid=None):
         dir = os.path.abspath(dir)
