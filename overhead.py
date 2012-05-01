@@ -49,11 +49,21 @@ parser.add_argument('--mtu',
                     help="Set MTU on hosts",
                     default="1500")
 
+parser.add_argument('--vqupdate',
+                    dest="vqupdate",
+                    help="vqupdate interval",
+                    default="25")
+
 parser.add_argument('--datapath',
                     dest="datapath",
                     help="Measure overhead of this datapath",
                     choices=["rx", "tx"],
                     default="rx")
+
+parser.add_argument("--profile",
+                    dest="profile",
+                    help="Directory to store profile data.  Omit if you don't want to profile",
+                    default=None)
 
 args = parser.parse_args()
 
@@ -80,7 +90,7 @@ class RxOverhead(Expt):
             h2.perfiso_set("ISO_RFAIR_INITIAL", self.opts("rate"))
 
         h1.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", self.opts('rate'))
-        h1.perfiso_set("ISO_VQ_UPDATE_INTERVAL_US", 25)
+        h1.perfiso_set("ISO_VQ_UPDATE_INTERVAL_US", self.opts("vqupdate"))
 
         # Create all IP routes etc.
         for i in xrange(n):
@@ -104,7 +114,14 @@ class RxOverhead(Expt):
                            '-t': self.opts('t')})
             self.procs.append(iperf.start_client(h2))
 
+        if self.opts("profile"):
+            self.h1 = h1
+            h1.start_profile(dir=self.opts("profile"))
+
     def stop(self):
+        if self.opts("profile"):
+            self.h1.stop_profile(dir=self.opts("profile"))
+
         self.hlist.remove_tenants()
         self.hlist.killall()
 
@@ -145,7 +162,12 @@ class TxOverhead(Expt):
                 h1.cmd(cmd)
 
         for i in xrange(n):
-            hlist.create_ip_tenant(i+1)
+            #hlist.create_ip_tenant(i+1)
+            ip = h1.get_tenant_ip(i+1)
+            h1.perfiso_create_txc(ip)
+            h1.tenants.append(i+1)
+            h1.cmd("ifconfig %s:%d %s" % (h1.get_10g_dev(), i+1, ip))
+            h2.cmd("ifconfig %s:%d %s" % (h2.get_10g_dev(), i+1, h2.get_tenant_ip(i+1)))
         hlist.setup_tenant_routes(n)
         h1.start_monitors(self.opts("dir"))
 
@@ -164,9 +186,15 @@ class TxOverhead(Expt):
                            'dir': os.path.join(self.opts("dir"), "iperf"),
                            '-t': self.opts('t')})
             self.procs.append(iperf.start_client(h1))
+        if self.opts("profile"):
+            self.h1 = h1
+            h1.start_profile(dir=self.opts("profile"))
         return
 
     def stop(self):
+        if self.opts("profile"):
+            self.h1.stop_profile(dir=self.opts("profile"))
+
         self.hlist.remove_tenants()
         self.hlist.killall()
         self.hlist.remove_qdiscs()
