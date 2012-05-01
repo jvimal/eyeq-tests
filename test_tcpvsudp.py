@@ -57,6 +57,7 @@ class TcpVsUdp(Expt):
             hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", 100000)
             hlist.perfiso_set("ISO_VQ_UPDATE_INTERVAL_US", 1000000)
             hlist.perfiso_set("ISO_RFAIR_INITIAL", 100000)
+            hlist.perfiso_set("ISO_MAX_TX_RATE", 100000)
 
         if self.opts("mtu"):
             hlist.set_mtu(self.opts("mtu"))
