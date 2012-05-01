@@ -197,7 +197,7 @@ def plot_latency(ax):
 
     ax.grid()
     fontP = FontProperties()
-    fontP.set_size('x-large')
+    fontP.set_size('large')
     ax.legend(loc="lower right", prop=fontP)
     ax.set_xlabel("Latency (us)")
     ax.set_ylabel("CDF")
@@ -205,7 +205,7 @@ def plot_latency(ax):
     if args.log:
         ax.set_xscale("log")
 
-m.rc('figure', figsize=(16, 6))
+m.rc('figure', figsize=(10*2, 4.5))
 fig = plt.figure()
 plot_ops(fig.add_subplot(1, 2, 1))
 plot_latency(fig.add_subplot(1, 2, 2))

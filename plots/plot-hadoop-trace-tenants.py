@@ -36,7 +36,14 @@ parser.add_argument('--maxx',
                     default=4000,
                     help="Max x axis (seconds)")
 
+parser.add_argument('--minx',
+                    dest="minx",
+                    type=int,
+                    default=500,
+                    help="Max x axis (seconds)")
+
 args = parser.parse_args()
+plot_defaults.rcParams['figure.figsize'] = 10, 3.5
 
 pat_start = re.compile(r'starting TCP flow seed (\d+).*size (\d+).*\-\-\-\s([\d\.]+)')
 pat_end = re.compile(r'ending TCP flow seed (\d+).*\-\-\-\s([\d\.]+)')
@@ -118,13 +125,13 @@ for i,dir in enumerate(args.dirs):
     #plt.xticks(locs, map(lambda e: '%.1f' % e, locs))
     yticks = map(lambda e: (e/5.0), range(0, 6))
     plt.yticks(yticks, map(lambda e: '%.1f' % e, yticks))
-    xticks = range(0, args.maxx+1, 1000)
+    xticks = range(args.minx, args.maxx+1, 500)
     plt.xticks(xticks, map(str, xticks))
     #plt.figure()
 
 plt.title(args.title)
 plt.xlabel("Seconds")
-plt.ylabel("CDF/Fraction")
+plt.ylabel("Job Progress")
 plt.legend(loc="upper left")
 plt.grid(True)
 if args.out:

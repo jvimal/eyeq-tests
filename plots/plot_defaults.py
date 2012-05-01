@@ -2,10 +2,10 @@
 from matplotlib import rc, rcParams
 
 
-DEF_AXIS_LEFT = 0.15
+DEF_AXIS_LEFT = 0.18
 DEF_AXIS_RIGHT = 0.95
 DEF_AXIS_BOTTOM = 0.1
-DEF_AXIS_TOP = 0.95
+DEF_AXIS_TOP = 0.99
 DEF_AXIS_WIDTH = DEF_AXIS_RIGHT - DEF_AXIS_LEFT
 DEF_AXIS_HEIGHT = DEF_AXIS_TOP - DEF_AXIS_BOTTOM
 # add_axes takes [left, bottom, width, height]
