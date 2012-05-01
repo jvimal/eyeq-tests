@@ -26,9 +26,15 @@ parser.add_argument('-o', '--out',
                     dest="out")
 
 parser.add_argument('--dir',
-                    help="Directory to read output from",
-                    required=True,
+                    help="old option (deprecated)",
+                    default='.',
                     dest="dir")
+
+parser.add_argument('--dirs',
+                    help="Directories to read output from",
+                    default=[],
+                    nargs="+",
+                    dest="dirs")
 
 parser.add_argument('--dp',
                     help="Datapath",
@@ -47,7 +53,7 @@ parser.add_argument('-C', dest='C')
 parser.add_argument('--enable', dest='enable', action="store_true")
 
 args = parser.parse_args()
-args.dir = os.path.join(args.dir, args.dp)
+#args.dir = os.path.join(args.dir, args.dp)
 
 def dir_param(n, C, enable):
     return "n%s-C%s-iso%s" % (n, C, ("--enable" if enable else ""))
@@ -84,22 +90,31 @@ def plot():
     blue_colours.append('black')
     half = N/2.0 + (L+1) * np.arange(0, N)
     xlabels = ['%dG' % (rate/1000) for rate in rates]
+    dirs = list(args.dirs)
 
     plot_defaults.rcParams['figure.figsize'] = 10, 3.5
 
     for i,n in enumerate(nums):
         print '---'
         ys = []
+
         for C in rates:
-            cpu_with = yvalue_cpu(n, C, True, args.cols)
-            cpu_without = yvalue_cpu(n, C, False, args.cols)
+            cpus_with = []
+            cpus_without = []
 
-            net_with = yvalue_net(n, C, True, args.dp)
-            net_without = yvalue_net(n, C, False, args.dp)
+            for dir in dirs:
+                args.dir = os.path.join(dir, args.dp)
+                cpu_with = yvalue_cpu(n, C, True, args.cols)
+                cpu_without = yvalue_cpu(n, C, False, args.cols)
 
-            ovhead = (cpu_with - cpu_without)
+                cpus_with.append(cpu_with)
+                cpus_without.append(cpu_without)
+            #net_with = yvalue_net(n, C, True, args.dp)
+            #net_without = yvalue_net(n, C, False, args.dp)
+
+            ovhead = (avg(cpus_with) - avg(cpus_without))
             ys.append(ovhead)
-            print n, C, ovhead, '%.3f - %.3f' % (cpu_with, cpu_without)
+            print n, C, ovhead, '%.3f - %.3f' % (avg(cpus_with), avg(cpus_without))
         xs = i + (L+1) * np.arange(0, N)
 
         plt.bar(xs, ys, color=blue_colours[i], label='$n=%d$' % n, width=1)

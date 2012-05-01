@@ -41,9 +41,9 @@ done
 # Also try for another VQ update interval
 for C in 1000 3000 6000 9000; do
 for n in 1 16 32 64; do
-for dp in tx rx; do
+for dp in rx; do
 for iso in "--enable"; do
-for vqupdate in 50; do
+for vqupdate in 50 100; do
 	subdir=exptdata/$exptid/$dp/n$n-C$C-iso$iso-vqu$vqupdate
 
 	python tests/overhead.py \
@@ -52,7 +52,8 @@ for vqupdate in 50; do
 		--dir $subdir \
 		-t $time \
 		--datapath $dp \
-		$iso
+		$iso \
+		--vqupdate $vqupdate
 
 done
 done
