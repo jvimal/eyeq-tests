@@ -1,6 +1,6 @@
 exptid=`date +%b%d-%H:%M`
 dir=/tmp/$exptid/incast
-time=120
+time=60
 
 ctrlc() {
 	killall -9 python
@@ -11,7 +11,7 @@ trap ctrlc SIGINT
 
 basecmd="python tests/scenario.py --time $time -n 14 --run tcpvsudp --exptid $exptid"
 
-for iso in "" "--enabled"; do
+for iso in "--enabled"; do
 for size in 100G; do
 	for proto in udp; do
 		for mtu in 9000; do
@@ -40,3 +40,4 @@ done
 done
 
 echo `date` $dir
+echo udp 14to1 $dir >> TODO

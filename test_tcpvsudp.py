@@ -63,7 +63,7 @@ class TcpVsUdp(Expt):
             hlist.set_mtu(self.opts("mtu"))
         else:
             hlist.set_mtu("1500")
-        hlist.start_monitors(self.opts("dir"))
+        hlist.start_monitors(self.opts("dir"), 1e3)
 
         self.procs = []
         # Start iperf servers
