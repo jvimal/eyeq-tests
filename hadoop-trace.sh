@@ -9,6 +9,9 @@ ctrlc() {
 	exit
 }
 
+# This is a deprecated experiment.  Hadoop co-located with some other
+# UDP tenant.
+
 trap ctrlc SIGINT
 
 echo exptid $exptid
