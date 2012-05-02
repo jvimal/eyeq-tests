@@ -10,6 +10,7 @@ trap ctrlc SIGINT
 size=10G
 dirs=""
 exptid=`date +%b%d-%H:%M`
+rps=${1:-3000}
 
 # Vary mtu
 # Vary workloads
@@ -51,7 +52,7 @@ for mtu in 9000; do
 					--exptid $exptid \
 					--traffic ~/vimal/exports/loadfiles/$traffic \
 					--active $active \
-					--mcperf --mcsize 6000 --mcrate 3000 --mcexp --nconn 10
+					--mcperf --mcsize 6000 --mcrate $rps --mcexp --nconn 10
 			done
 		done
 	done
@@ -108,4 +109,4 @@ echo `date` $exptid
 echo -e $dirs
 popd
 
-echo memcached_cluster_onoff $exptid 3000 rps 10 conn >> TODO
+echo memcached_cluster_onoff $exptid rps: $rps conn: 10 >> TODO
