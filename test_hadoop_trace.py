@@ -6,6 +6,8 @@ import argparse
 import datetime
 import sys
 from collections import defaultdict
+from subprocess import Popen, PIPE
+import termcolor as T
 
 parser = argparse.ArgumentParser(description="Hadoop test.")
 parser.add_argument('--create',
@@ -110,7 +112,7 @@ class HadoopTrace(Expt):
         self.hlist.setup_tenant_routes(args.nhadoop+1)
 
     def get_hadoop_P(self, i):
-        return self.opts("base")**i
+        return self.opts("base")**(i+1)
 
     def start_hadoop(self, i, P=1):
         # Create loadgen file
@@ -171,10 +173,20 @@ class HadoopTrace(Expt):
             h.cmd_async(cmd)
 
         print "Waiting for loadgen to start..."
-        progress(20)
+        progress(5)
         for h in self.hlist.lst:
             ip = h.get_tenant_ip(tid)
-            p = Popen("nc -nzv %s %s" % (ip, port), shell=True)
+
+            while 1:
+                p = Popen("nc -nzv %s %s" % (ip, port),
+                          shell=True, stdout=PIPE, stderr=PIPE)
+                stdout, stderr = p.communicate()
+                if 'open' in stderr:
+                    print T.colored("started %s:%s" % (ip, port), "green")
+                    break
+                else:
+                    print T.colored("  retrying %s:%s" % (ip, port), "yellow")
+                    sleep(0.5)
         return
 
     def clean(self):
@@ -199,6 +211,7 @@ class HadoopTrace(Expt):
             sys.exit(0)
 
         self.hlist.set_mtu(self.opts("mtu"))
+        self.hlist.cmd("killall -9 irqbalance")
         self.hlist.configure_tx_interrupt_affinity()
         if self.opts("enabled") or self.opts("weighted") or self.opts("inv_weighted"):
             self.hlist.insmod()
@@ -215,6 +228,7 @@ class HadoopTrace(Expt):
         if self.opts("destroy"):
             self.hlist.remove_tenants()
             return
+        start = datetime.datetime.now()
         try:
             while 1:
                 done = True
@@ -223,7 +237,8 @@ class HadoopTrace(Expt):
                 if done:
                     break
                 else:
-                    print "Waiting for hadoop job(s)...", datetime.datetime.now()
+                    print "Waiting for hadoop job(s)   start: ", start
+                    print "        now: ", datetime.datetime.now()
                     try:
                         progress(60)
                     except:
