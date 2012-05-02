@@ -82,6 +82,12 @@ parser.add_argument('--nototal',
                     action="store_true",
                     dest="nototal")
 
+parser.add_argument('--rect',
+                    help="Make graph bounding box more rectangular",
+                    default=False,
+                    action="store_true",
+                    dest="rect")
+
 args = parser.parse_args()
 LOADGEN_OUTPUT = 'loadgen'
 
@@ -184,7 +190,8 @@ def plot_rate(ax, data, dir="tx", title=args.title, markevery=args.every):
         l = min(len(total), len(xvalues))
         ax.plot(xvalues[0:l], total[0:l], lw=2, label="total", color='b')
     try:
-        ax.legend(loc='lower right')
+        ax.legend(loc="center left", prop=fontP)
+        #ax.legend(loc='lower right')
     except:
         pass
     ax.set_title(title)
@@ -201,6 +208,9 @@ def plot_rate(ax, data, dir="tx", title=args.title, markevery=args.every):
         except:
             pass
     return
+
+if args.rect:
+    plot_defaults.rcParams['figure.figsize'] = 10, 4
 
 for f in args.files:
     data = parse_file(f)
