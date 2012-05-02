@@ -25,6 +25,7 @@ for size in 100G; do
 			$basecmd --dir $dir/$proto-mtu$mtu-s$size-with$iso $iso \
 				--traffic ~/vimal/exports/14to1_${size}_${proto}_tenant \
 				--mtu $mtu \
+				--ai 10 --md 4
 
             # WITHOUT ISOLATION
 			#python tests/genconfig.py --type $proto --traffic incast \
@@ -40,4 +41,15 @@ done
 done
 
 echo `date` $dir
+
+pushd ../exptdata/$exptid
+
+ext=pdf
+for arg in "--accum 1000 -o plot-all.$ext" "--range 33:34 --accum 10 -o plot-zoom.$ext"; do
+python2.6 ~/iso/tests/plots/plot_tenant_rate.py -f \
+	udp-mtu9000-s100G-with--enabled/l1/tenant.txt --rx \
+	--title "" $arg -l tcp udp
+done
+popd
+
 echo udp 14to1 $dir >> TODO
