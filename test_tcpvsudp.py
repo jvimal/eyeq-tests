@@ -50,8 +50,9 @@ class TcpVsUdp(Expt):
                 hlist.perfiso_set("ISO_RFAIR_INCREASE_INTERVAL_US", self.opts("aimd_dt_us"))
                 # At 500us, we increment by 1Mbps.  So let's use this
                 # to scale our increment accordingly
-                increment = max(1, 1 * int(self.opts("aimd_dt_us")) / 500)
+                increment = max(1, self.opts("ai") * int(self.opts("aimd_dt_us")) / 500)
                 hlist.perfiso_set("ISO_RFAIR_INCREMENT", "%s" % increment)
+                hlist.perfiso_set("ISO_FALPHA", "%s" % self.opts("md"))
         else:
             hlist.perfiso_set("IsoAutoGenerateFeedback", 0)
             hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", 100000)

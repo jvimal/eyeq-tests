@@ -91,6 +91,18 @@ parser.add_argument('--aimd_dt_us',
                     help="AI/MD dt in microsec.  Default 500us",
                     default="500")
 
+parser.add_argument('--ai',
+                    dest="ai",
+                    help="AI number",
+                    type=int,
+                    default=1)
+
+parser.add_argument('--md',
+                    dest="md",
+                    help="md smoothening factor in 1-alpha/2s",
+                    type=int,
+                    default=8)
+
 args = parser.parse_args()
 
 def indent(s, depth=1, char='\t'):
@@ -130,6 +142,8 @@ scen.add("tcpvsudp", TcpVsUdp(t=args.time, enabled=args.enabled,
                               P=args.P, n=args.n, dir=args.dir, wtcp=args.wtcp,
                               mtu=args.mtu, vqupdate=args.vqupdate,
                               vqrate=args.vqrate,
+                              ai=args.ai,
+                              md=args.md,
                               aimd_dt_us=args.aimd_dt_us,
                               start_udp=args.start_udp, traffic=args.traffic))
 scen.add("udp", Udp(t=args.time, enabled=args.enabled,
