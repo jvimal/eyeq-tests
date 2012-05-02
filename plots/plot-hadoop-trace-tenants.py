@@ -33,7 +33,7 @@ parser.add_argument('--base', '-b',
 parser.add_argument('--maxx',
                     dest="maxx",
                     type=int,
-                    default=4000,
+                    default=3000,
                     help="Max x axis (seconds)")
 
 parser.add_argument('--minx',
