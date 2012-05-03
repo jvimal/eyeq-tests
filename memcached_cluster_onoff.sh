@@ -29,9 +29,9 @@ python tests/genconfig.py --traffic fullmesh \
 # Both tenants executed alone without interference
 
 for mtu in 9000; do
-	for iso in "" "--enable" "--static"; do
+	for iso in "" "--enable"; do
 		for workload in ~/vimal/exports/memcached_cluster/*; do
-			for active in udp mem udp,mem; do
+			for active in mem udp,mem; do
 				work=`basename $workload`
 				dir=/tmp/memcached-mtu$mtu-iso$iso-work$work-active$active
 				mkdir -p $dir
