@@ -13,7 +13,7 @@ n=16
 
 basecmd="python tests/scenario.py --time $time -n $n --run tcpvsudp --exptid $exptid"
 
-for onoff in 10us,20us  10us,150us  100us,200us  1ms,2ms  100ms,200ms; do
+for onoff in 5ms,20ms; do
 for iso in "" "--enable"; do
 	for proto in udp; do
 		for mtu in 9000; do
@@ -24,7 +24,8 @@ for iso in "" "--enable"; do
 
 			$basecmd --dir $dir/$proto-mtu$mtu-$onoff-n$n-with$iso $iso \
 				--traffic ~/vimal/exports/${n}to1_${proto}_${onoff}_tenant \
-				--mtu $mtu
+				--mtu $mtu \
+				--wtcp 2
 
 			# WITHOUT ISOLATION
 			#python tests/genconfig.py --type $proto --traffic incast \
