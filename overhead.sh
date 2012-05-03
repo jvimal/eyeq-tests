@@ -38,6 +38,7 @@ done
 done
 done
 
+function blah {
 # Also try for another VQ update interval
 for C in 1000 3000 6000 9000; do
 for n in 1 16 32 64; do
@@ -60,16 +61,19 @@ done
 done
 done
 done
-
+}
 
 echo `date` $exptid
 echo new tx rx $exptid >> TODO
 
+pushd exptdata/$exptid
+
 for dp in rx tx; do
 for ext in pdf png; do
-	python2.6 tests/plots/plot-overhead.py \
-		--dir exptdata/$exptid/ \
+	python2.6 ~/iso/tests/plots/plot-overhead.py \
+		--dirs . \
 		--dp $dp \
-		-o exptdata/$exptid/$dp.$ext
+		-o $dp.$ext
 done
 done
+popd
