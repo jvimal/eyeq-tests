@@ -204,9 +204,11 @@ class Host(object):
         # to try it with Hadoop!
         myindex = int(self.addr.split('.')[-1])
         dev = self.get_10g_dev()
+        self.delay = True
         for tid in xrange(1, 1+num_tenants):
             cmd = "route add -net 11.0.%d.0/24 dev %s:%d" % (tid, dev, tid)
             self.cmd(cmd)
+        self.delayed_cmds_execute()
         return
 
     def remove_bridge(self, direct=True):
