@@ -88,6 +88,12 @@ parser.add_argument('--rect',
                     action="store_true",
                     dest="rect")
 
+parser.add_argument('--headroom',
+                    help="UGLY: insert text inside graph for annotating headroom",
+                    default=False,
+                    action="store_true",
+                    dest="headroom")
+
 args = parser.parse_args()
 LOADGEN_OUTPUT = 'loadgen'
 
@@ -226,6 +232,11 @@ for f in args.files:
 
 if args.out:
     print 'saved to', args.out
+    if args.headroom:
+        plt.annotate('Enforce headroom', (34, 7000), xytext=(10,-60), textcoords='offset points', size=20,
+                     arrowprops=dict(arrowstyle="simple",
+                                     fc="0.6", ec="none",
+                                     connectionstyle="arc3,rad=-0.3"))
     plt.savefig(args.out)
 else:
     plt.show()
