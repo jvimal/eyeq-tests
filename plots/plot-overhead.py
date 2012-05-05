@@ -7,6 +7,9 @@ parser = argparse.ArgumentParser()
 rates = [1000, 3000, 6000, 9000]
 nums = [1, 16, 32, 64]
 
+#rates = [6000, 9000]
+#nums = [1, 64]
+
 parser.add_argument('--cols',
                     help="Columns to include for CPU usage",
                     action="store",
@@ -16,7 +19,7 @@ parser.add_argument('--cols',
 parser.add_argument('--maxy',
                     help="Max CPU on y-axis",
                     action="store",
-                    default=8,
+                    default=2.1,
                     dest="maxy",
                     type=int)
 
@@ -97,10 +100,12 @@ def plot():
     for i,n in enumerate(nums):
         print '---'
         ys = []
+        yerrs = []
 
         for C in rates:
             cpus_with = []
             cpus_without = []
+            ovheads = []
 
             for dir in dirs:
                 args.dir = os.path.join(dir, args.dp)
@@ -109,25 +114,35 @@ def plot():
 
                 cpus_with.append(cpu_with)
                 cpus_without.append(cpu_without)
+                ovheads.append(cpu_with - cpu_without)
             #net_with = yvalue_net(n, C, True, args.dp)
             #net_without = yvalue_net(n, C, False, args.dp)
 
-            ovhead = (avg(cpus_with) - avg(cpus_without))
+            try:
+                ovhead = avg(ovheads) #min(cpus_with) - min(cpus_without)
+                yerr = stdev(ovheads)
+            except:
+                print 'exception'
+                ovhead = 0
             ys.append(ovhead)
-            print n, C, ovhead, '%.3f - %.3f' % (avg(cpus_with), avg(cpus_without))
+            yerrs.append(yerr)
+            print n, C, ovhead, '+/-', yerr
+
         xs = i + (L+1) * np.arange(0, N)
 
-        plt.bar(xs, ys, color=blue_colours[i], label='$n=%d$' % n, width=1)
+        plt.bar(xs, ys, yerr=yerrs, color=blue_colours[i],
+                label='$n=%d$' % n, width=1, ecolor='black')
     plt.ylim((0, args.maxy))
     plt.xticks(half, xlabels)
-    plt.yticks(np.arange(0, 6.1, 2))
+    plt.yticks(np.arange(0, 2.1, 1))
     plt.ylabel("CPU overhead (%)")
     plt.legend(loc="upper left")
 
 def test():
     n = args.n
     C = args.C
-    dir = dir_param(n, C, args.enable)
+    args.dir = os.path.join(args.dir, args.dp)
+    dir = os.path.join(args.dp, dir_param(n, C, args.enable))
     print "%s %.3f" % (dir, yvalue_cpu(n, C, args.enable, args.cols))
 
 if args.out:
