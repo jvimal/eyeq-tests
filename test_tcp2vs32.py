@@ -19,9 +19,15 @@ if __name__ == "__main__":
 
     parser.add_argument('--time', '-t',
                         type=int,
-                        dest="time",
+                        dest="t",
                         help="Time to run expt",
                         default=120)
+
+    parser.add_argument('-P',
+                        type=int,
+                        dest="P",
+                        help="parallel connections",
+                        default=64)
 
     parser.add_argument('--wtcp',
                         dest="wtcp",
@@ -88,7 +94,7 @@ class Tcp2Vs32(Expt):
         client = Iperf({'-p': 5002,
                         '-c': h1.get_10g_ip(),
                         '-t': self.opts("t"),
-                        '-P': 32})
+                        '-P': self.opts("P")})
         if self.opts("enabled"):
             client.opts["-c"] = h1.get_tenant_ip(2)
         client = client.start_client(h3)
