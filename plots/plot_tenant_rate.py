@@ -28,7 +28,8 @@ parser.add_argument('--out', '-o',
 
 parser.add_argument('--maxy',
                     help="Max mbps on y-axis..",
-                    default=1000,
+                    default=10000,
+                    type=int,
                     action="store",
                     dest="maxy")
 
@@ -166,7 +167,7 @@ def accum(values):
     return ret
 
 def get_marker(tid):
-    return 'so^v'[tid]
+    return 'so^v'[tid%3]
 
 def get_tid_from_ip(ip):
     return int(ip.split('.')[2])
@@ -176,6 +177,7 @@ def plot_rate(ax, data, dir="tx", title=args.title, markevery=args.every):
     total = []
     TID = -1
     default_colours = 'grb'
+    l = len(default_colours)
     for tid in sorted(data.keys()):
         #if tid != '11.0.1.2':
         #    continue
@@ -185,7 +187,7 @@ def plot_rate(ax, data, dir="tx", title=args.title, markevery=args.every):
         label = str(tid)
         if args.labels:
             label = args.labels[TID]
-        ax.plot(xvalues, yvalues, lw=2, label=label, color=default_colours[TID],
+        ax.plot(xvalues, yvalues, lw=2, label=label, color=default_colours[TID%l],
                 marker=get_marker(TID), markevery=markevery, markersize=15)
         if len(total) == 0:
             total = yvalues
@@ -204,9 +206,10 @@ def plot_rate(ax, data, dir="tx", title=args.title, markevery=args.every):
     ax.grid(True)
     ax.set_xlabel("Time (s)")
     ax.set_ylabel("Rate")
-    ax.set_ylim((0, 10001))
-    ax.set_yticks(range(1000, 10001, 2000))
+    ax.set_ylim((0, args.maxy+1))
+    ax.set_yticks(range(1000, args.maxy+1, 2000))
     ax.set_yticklabels(map(lambda e: '%dG' % (e/1000), range(1000, 10001, 2000)))
+    ax.legend(loc="upper right")
     if args.range:
         try:
             lo,hi = map(float, args.range.split(':'))
