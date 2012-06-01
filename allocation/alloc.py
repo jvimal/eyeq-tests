@@ -93,17 +93,27 @@ def print_formulation(flows, tx_flows, rx_flows):
     #print " { %s, " % (", ".join(constraints))
     endpoint_aggs = []
 
+    def agg_var(dir, host, tid):
+        return "%s%s%s" % (dir, host, tid)
+
+    minmax_constraints = []
+
     # TX-Capacity,
     for host in sorted(tx_flows.keys()):
         vars = []
         for tid in sorted(tx_flows[host]):
             agg = []
+            aggflows = []
             for flow in tx_flows[host][tid]:
                 var = flow_var(flow)
                 excessvar = var.replace("x", "e")
                 vars.append("(%s + %s)" % (var, excessvar))
                 agg.append(excessvar)
+                aggflows.append(var)
             endpoint_aggs.append(add(agg))
+
+            aggvar = agg_var("tx", host, tid)
+            minmax_constraints.append("%s <= %s" % (add(aggflows), aggvar))
         constraints.append("%s <= 1" % add(vars))
 
     # RX capacity,
@@ -111,16 +121,19 @@ def print_formulation(flows, tx_flows, rx_flows):
         vars = []
         for tid in sorted(rx_flows[host]):
             agg = []
+            aggflows = []
             for flow in rx_flows[host][tid]:
                 var = flow_var(flow)
                 excessvar = var.replace("x", "e")
                 vars.append("(%s + %s)" % (var, excessvar))
                 agg.append(excessvar)
+                aggflows.append(var)
             endpoint_aggs.append(add(agg))
-        constraints.append("%s <= 1" % add(vars))
 
-    def agg_var(dir, host, tid):
-        return "%s%s%s" % (dir, host, tid)
+            aggvar = agg_var("rx", host, tid)
+            minmax_constraints.append("%s <= %s" % (add(aggflows), aggvar))
+
+        constraints.append("%s <= 1" % add(vars))
 
     # Auxiliary TX variables
     for host in sorted(tx_flows.keys()):
@@ -143,9 +156,9 @@ def print_formulation(flows, tx_flows, rx_flows):
         constraints.append("%s <= 1" % add(vars))
 
     def prelude():
-        print "U1[x_] := Log[x];"
-        print "U2[x_] := -1/(3 x^(3));"
-        print "U3[x_] := Log[x+1];"
+        print "U1[x_] := -1/x;"
+        print "U2[x_] := -1/(5 x^(5));"
+        print "U3[x_] := 1000 Log[x+1];"
         print ""
         print "Clear[%s];" % (",".join(allvars))
         print ""
@@ -171,13 +184,14 @@ def print_formulation(flows, tx_flows, rx_flows):
             # Flowvars
             if var in flowvars:
                 excessvar = var.replace("x", "e")
-                addns.append("U1[%s + %s]" % (var, excessvar))
+                #addns.append("U1[%s + %s]" % (var, excessvar))
+                addns.append("U1[%s]" % var)
             elif var.startswith("tx") or var.startswith("rx"):
                 caps.append("U2[%s]" % var)
 
-        print add(addns + caps)
+        print " 10000 * (%s) " % add(addns + caps)
 
-        print "+ 1000 * (",
+        print "+ (",
         endpoint_aggs_utility = []
         for e in endpoint_aggs:
             endpoint_aggs_utility.append("U3[%s]" % e)
@@ -193,10 +207,10 @@ def print_formulation(flows, tx_flows, rx_flows):
             evar = var.replace("x", "e")
             sums.append("%s + %s" % (var, evar))
             allocs.append("%s" % var.replace("x", "f"))
-        print "{ %s } = ({ %s } /. sol[[2]]); " % (", ".join(allocs), (", ".join(sums)))
+        print "{ %s } = ({ %s } /. sol[[2]]) " % (", ".join(allocs), (", ".join(sums)))
 
     prelude()
-    p(constraints)
+    p(constraints + minmax_constraints)
     starting_points()
     solve()
     print_solution()
