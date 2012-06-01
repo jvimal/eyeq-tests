@@ -1,8 +1,9 @@
 #!/bin/bash
 
 exptid=`date +%b%d-%H:%M`
-time=120
+time=30
 start=`date`
+rootdir=$(dirname `readlink -f ${BASH_SOURCE[0]}`)
 
 ctrlc() {
 	killall -9 python
@@ -13,11 +14,11 @@ trap ctrlc SIGINT
 
 n=3
 
-for topo in 1 2; do
+for topo in $rootdir/allocation_topos/*; do
+	t=$(basename $topo)
 for rate in 9000; do
-	python tests/test_allocation.py --dir /tmp/alloc-$rate \
-		-n $n \
-		--vqrate 9000 \
+	python tests/test_allocation.py --dir /tmp/alloc-$rate-topo$t \
+		--vqrate $rate \
 		--exptid $exptid \
 		--topo $topo
 done
