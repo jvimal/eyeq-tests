@@ -30,7 +30,7 @@ class Iperf:
             cmd += " -b %s -l32k" % self.opts.get('-b')
         if self.opts.get('-B', False):
             cmd += " -B %s " % self.opts.get('-B')
-        cmd += " > %s/iperf-%s 2>&1" % (self.opts.get("dir", "/tmp"), server_ip)
+        cmd += " > %s/iperf-%s.txt 2>&1" % (self.opts.get("dir", "/tmp"), server_ip)
         if cpu is not None:
             cpu = cpu % 8
             cmd = "taskset -c %d %s" % (cpu, cmd)
