@@ -1,0 +1,7 @@
+# which is impt?  per-flow fairness or per-endpoint fairness?
+1 1 3 1
+1 1 4 1
+1 1 5 1
+
+# the other tenant
+2 2 5 2
