@@ -47,7 +47,7 @@ def optflow(flows, tx_flows, rx_flows):
                 agg.append(var)
             cap = agg_var("tx", host, tid)
             capvars.append(cap)
-            constraints.append("%s <= (1+g) %s" % (add(agg), cap))
+            constraints.append("%s <= (1+g*0) %s" % (add(agg), cap))
             aggvars.append(add(agg))
 
     # RX
@@ -59,11 +59,11 @@ def optflow(flows, tx_flows, rx_flows):
                 agg.append(var)
             cap = agg_var("rx", host, tid)
             capvars.append(cap)
-            constraints.append("%s <= (1+g) %s" % (add(agg), cap))
+            constraints.append("%s <= (1+g*0) %s" % (add(agg), cap))
             aggvars.append(add(agg))
 
     def start():
-        print "optflow[capsol_] := Module[{g=0.1}, "
+        print "optflow[capsol_] := Module[{}, "
         tmp = ",".join(capvars)
 
         # Clear all caps
@@ -132,7 +132,7 @@ def optcap(flows, tx_flows, rx_flows):
                 agg.append(var)
             cap = agg_var("tx", host, tid)
             capvars.append(cap)
-            constraints.append("0 <= %s <= %s" % (cap, add(agg)))
+            constraints.append("0 <= %s <= (1+g) %s" % (cap, add(agg)))
             aggvars.append(add(agg))
             hostagg.append(cap)
         constraints.append("%s <= 1" % add(hostagg))
@@ -147,13 +147,13 @@ def optcap(flows, tx_flows, rx_flows):
                 agg.append(var)
             cap = agg_var("rx", host, tid)
             capvars.append(cap)
-            constraints.append("0 <= %s <= %s" % (cap, add(agg)))
+            constraints.append("0 <= %s <= (1+g) %s" % (cap, add(agg)))
             aggvars.append(add(agg))
             hostagg.append(cap)
         constraints.append("%s <= 1" % add(hostagg))
 
     def start():
-        print "optcap[flowsol_] := Module[{g=0.1}, "
+        print "optcap[flowsol_] := Module[{}, "
         tmp = ",".join(flowvars)
 
         # Clear all caps
@@ -200,25 +200,25 @@ def iterate():
     print "flowsol = optflow[{}];"
     print "capsol = {};"
     print "For[i=0,"
-    print "i < 5,"
+    print "i < 20,"
     print "i++,"
     print "  capsol = optcap[flowsol];"
-    print "  Print[\"**********\"];"
-    print "  Print[\"capsol\", i, \":\", Sort@capsol];"
+    #print "  Print[\"**********\"];"
+    #print "  Print[\"capsol\", i, \":\", Sort@capsol];"
     print "  flowsol = optflow[capsol];"
-    print "  Print[\"flowsol\", i, \":\", Sort@flowsol];"
+    #print "  Print[\"flowsol\", i, \":\", Sort@flowsol];"
     print "];"
 
-    print "Print[Sort@flowsol];"
-    print "Print[Sort@capsol];"
+    print "NormaliseSol[sol_, scale_] := Sort@(sol /. (Rule[x_,y_] :> Rule[x,y/scale]));"
+    print "Print[NormaliseSol[flowsol, 1]];"
+    print "Print[NormaliseSol[capsol, 1]];"
     return
-
 
 def utilities():
     print "Clear[U1, U2, U3];"
     print "U[a_,x_] := If[a==1, Log[x], -1/((a-1) x^(a-1))];"
     print "U1[x_] := U[1,x];"
-    print "U2[x_] := U[10,x];"
+    print "U2[x_] := U[7,x];"
     print "U3[x_] := 1000 Log[x+1];"
 
 def print_formulation(flows, tx_flows, rx_flows):
@@ -227,6 +227,7 @@ def print_formulation(flows, tx_flows, rx_flows):
     to flows at that host
     """
     utilities()
+    print "g=0.1;"
     optflow(flows, tx_flows, rx_flows)
     print ""
     print ""
