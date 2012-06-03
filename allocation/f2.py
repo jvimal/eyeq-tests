@@ -47,7 +47,7 @@ def optflow(flows, tx_flows, rx_flows):
                 agg.append(var)
             cap = agg_var("tx", host, tid)
             capvars.append(cap)
-            constraints.append("%s <= (1+g*0) %s" % (add(agg), cap))
+            constraints.append("%s <= (1+gf) %s" % (add(agg), cap))
             aggvars.append(add(agg))
 
     # RX
@@ -59,7 +59,7 @@ def optflow(flows, tx_flows, rx_flows):
                 agg.append(var)
             cap = agg_var("rx", host, tid)
             capvars.append(cap)
-            constraints.append("%s <= (1+g*0) %s" % (add(agg), cap))
+            constraints.append("%s <= (1+gf) %s" % (add(agg), cap))
             aggvars.append(add(agg))
 
     def start():
@@ -132,7 +132,7 @@ def optcap(flows, tx_flows, rx_flows):
                 agg.append(var)
             cap = agg_var("tx", host, tid)
             capvars.append(cap)
-            constraints.append("0 <= %s <= (1+g) %s" % (cap, add(agg)))
+            constraints.append("0 <= %s <= (1+gc) %s" % (cap, add(agg)))
             aggvars.append(add(agg))
             hostagg.append(cap)
         constraints.append("%s <= 1" % add(hostagg))
@@ -147,7 +147,7 @@ def optcap(flows, tx_flows, rx_flows):
                 agg.append(var)
             cap = agg_var("rx", host, tid)
             capvars.append(cap)
-            constraints.append("0 <= %s <= (1+g) %s" % (cap, add(agg)))
+            constraints.append("0 <= %s <= (1+gc) %s" % (cap, add(agg)))
             aggvars.append(add(agg))
             hostagg.append(cap)
         constraints.append("%s <= 1" % add(hostagg))
@@ -200,7 +200,7 @@ def iterate():
     print "flowsol = optflow[{}];"
     print "capsol = {};"
     print "For[i=0,"
-    print "i < 20,"
+    print "i < niter,"
     print "i++,"
     print "  capsol = optcap[flowsol];"
     #print "  Print[\"**********\"];"
@@ -227,7 +227,7 @@ def print_formulation(flows, tx_flows, rx_flows):
     to flows at that host
     """
     utilities()
-    print "g=0.1;"
+    print "gc=0.1; gf=0; niter=50;"
     optflow(flows, tx_flows, rx_flows)
     print ""
     print ""
