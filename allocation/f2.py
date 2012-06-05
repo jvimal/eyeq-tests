@@ -1,5 +1,6 @@
 # Some formulation
 from collections import defaultdict
+import random
 
 """
 Sandwhich formulation...  iterative optimisation problems:
@@ -74,7 +75,7 @@ def optflow(flows, tx_flows, rx_flows):
 
         print "{%s} = If[Length[capsol] > 0," % tmp
         print "    ({%s} /. capsol), " % (tmp)
-        tmp2 = ",".join(["0.5" for var in capvars])
+        tmp2 = ",".join(["%.2f" % (random.random()) for var in capvars])
         print "    {%s}" % (tmp2)
         print "];"
 
@@ -100,7 +101,7 @@ def optflow(flows, tx_flows, rx_flows):
         # Clear all flowvars
         print "Clear[%s];" % ",".join(flowvars)
 
-        print "Return[flowsol[[2]]];"
+        print "Return[Sort@flowsol];"
         print "]; "
 
     start()
@@ -163,7 +164,8 @@ def optcap(flows, tx_flows, rx_flows):
         print "Clear[%s];" % tmp
 
         # Assign all flows
-        print "{%s} = ({%s} /. flowsol);" % (tmp, tmp)
+        rands = ",".join(["%.2f" % random.random() for var in flowvars])
+        print "{%s} = If[Length[flowsol] > 0,\n ({%s} /. flowsol),\n {%s}];" % (tmp, tmp, rands)
 
         utilities = [ ("U2[%s]" % c) for c in capvars ]
         print "f=%s;" % add(utilities)
@@ -187,7 +189,7 @@ def optcap(flows, tx_flows, rx_flows):
         # Clear all flowvars
         print "Clear[%s];" % ",".join(flowvars)
 
-        print "Return[capsol[[2]]];"
+        print "Return[Sort@capsol];"
         print "]; "
 
     start()
@@ -197,21 +199,39 @@ def optcap(flows, tx_flows, rx_flows):
     return
 
 def iterate():
-    print "flowsol = optflow[{}];"
-    print "capsol = {};"
+    print "run := Reap[ Module[{},"
+    print "flowsol1 = optflow[{}];"
+    print "capsol1 = {{}, {}};"
+
+    print "flowsol2 = {{}, {}};"
+    print "capsol2 = optcap[{}];"
+
     print "For[i=0,"
     print "i < niter,"
     print "i++,"
-    print "  capsol = optcap[flowsol];"
+    print "  capsol1 = optcap[ flowsol1[[2]] ];"
+    print "  flowsol2 = optflow[ capsol2[[2]] ];"
     #print "  Print[\"**********\"];"
     #print "  Print[\"capsol\", i, \":\", Sort@capsol];"
-    print "  flowsol = optflow[capsol];"
+
+    print "  Sow[capsol1,  \"cs1\"];"
+    print "  Sow[flowsol1, \"fs1\"];"
+
+    print "  Sow[capsol2,  \"cs2\"];"
+    print "  Sow[flowsol2, \"fs2\"];"
+
+    print "  capsol2 = optcap[ flowsol2[[2]] ];"
+    print "  flowsol1 = optflow[ capsol1[[2]] ];"
+
     #print "  Print[\"flowsol\", i, \":\", Sort@flowsol];"
     print "];"
 
     print "NormaliseSol[sol_, scale_] := Sort@(sol /. (Rule[x_,y_] :> Rule[x,y/scale]));"
     print "Print[NormaliseSol[flowsol, 1+gc]];"
     print "Print[NormaliseSol[capsol, 1+gf]];"
+    print "], "
+    print '{"cs1", "fs1", "cs2", "fs2"}'
+    print '];'
     return
 
 def utilities():
@@ -220,6 +240,19 @@ def utilities():
     print "U1[x_] := U[1,x];"
     print "U2[x_] := U[7,x];"
     print "U3[x_] := 1000 Log[x+1];"
+
+
+def plot():
+    print "sol = run;"
+    print "data = First /@ Flatten[#,1]& /@ sol[[2]];"
+    print "scale[x_] := x/Max[x];"
+    print 'cs1 = data[[1]];'
+    print 'fs1 = data[[2]];'
+    print 'ListLogPlot[{scale@cs1, scale@fs1}, Joined->True]'
+    #print 'data = { Normalise /@ Flatten /@ series1[[2]], '
+    #print '  Normalise /@ Flatten /@ series2[[2]] };'
+    #print 'ListLogPlot[#, Joined -> True]& /@ data'
+    return
 
 def print_formulation(flows, tx_flows, rx_flows):
     """
@@ -235,4 +268,6 @@ def print_formulation(flows, tx_flows, rx_flows):
     print ""
     print ""
     iterate()
+    print ""
+    plot()
     return
