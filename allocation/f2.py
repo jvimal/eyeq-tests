@@ -76,6 +76,7 @@ def optflow(flows, tx_flows, rx_flows):
         print "{%s} = If[Length[capsol] > 0," % tmp
         print "    ({%s} /. capsol), " % (tmp)
         tmp2 = ",".join(["%.2f" % (random.random()) for var in capvars])
+        #tmp2 = ",".join(["Random[]"  for var in capvars])
         print "    {%s}" % (tmp2)
         print "];"
 
@@ -165,6 +166,7 @@ def optcap(flows, tx_flows, rx_flows):
 
         # Assign all flows
         rands = ",".join(["%.2f" % random.random() for var in flowvars])
+        #rands = ",".join(["Random[]" for var in flowvars])
         print "{%s} = If[Length[flowsol] > 0,\n ({%s} /. flowsol),\n {%s}];" % (tmp, tmp, rands)
 
         utilities = [ ("U2[%s]" % c) for c in capvars ]
@@ -222,7 +224,7 @@ def iterate():
 
     print "  capsol2 = optcap[ flowsol2[[2]] ];"
     print "  flowsol1 = optflow[ capsol1[[2]] ];"
-
+    print '   Print["iteration: ", i];'
     #print "  Print[\"flowsol\", i, \":\", Sort@flowsol];"
     print "];"
 
