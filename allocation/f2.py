@@ -41,27 +41,33 @@ def optflow(flows, tx_flows, rx_flows):
 
     # TX
     for host in sorted(tx_flows.keys()):
+        hostagg = []
         for tid in sorted(tx_flows[host]):
             agg = []
             for flow in tx_flows[host][tid]:
                 var = flow_var(flow)
                 agg.append(var)
+                hostagg.append(var)
             cap = agg_var("tx", host, tid)
             capvars.append(cap)
             constraints.append("%s <= (1+gc) %s" % (add(agg), cap))
             aggvars.append(add(agg))
+        constraints.append("%s <= 1" % add(hostagg))
 
     # RX
     for host in sorted(rx_flows.keys()):
+        hostagg = []
         for tid in sorted(rx_flows[host]):
             agg = []
             for flow in rx_flows[host][tid]:
                 var = flow_var(flow)
                 agg.append(var)
+                hostagg.append(var)
             cap = agg_var("rx", host, tid)
             capvars.append(cap)
             constraints.append("%s <= (1+gc) %s" % (add(agg), cap))
             aggvars.append(add(agg))
+        constraints.append("%s <= 1" % add(hostagg))
 
     def start():
         print "optflow[capsol_] := Module[{}, "
@@ -229,8 +235,8 @@ def iterate():
     print "];"
 
     print "NormaliseSol[sol_, scale_] := Sort@(sol /. (Rule[x_,y_] :> Rule[x,y/scale]));"
-    print "Print[NormaliseSol[flowsol, 1+gc]];"
-    print "Print[NormaliseSol[capsol, 1+gf]];"
+    print "Print[NormaliseSol[flowsol, 1]];"
+    print "Print[NormaliseSol[capsol, 1]];"
     print "], "
     print '{"cs1", "fs1", "cs2", "fs2"}'
     print '];'
@@ -242,7 +248,7 @@ def utilities():
     print "U1[x_] := U[1,x];"
     print "U2[x_] := U[7,x];"
     print "U3[x_] := 1000 Log[x+1];"
-
+    print "U4[x_,a_] := 1/(1+Exp[ 10 (x - a) ]);"
 
 def plot():
     print "sol = run;"
