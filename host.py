@@ -457,3 +457,9 @@ class Host(object):
 
     def netstat_end(self, dir):
         self.cmd("netstat -s > %s/netstat_end.txt" % dir)
+
+    def start_netperf_server(self):
+        self.cmd("killall -9 netserver; /root/vimal/exports/netperf/netserver")
+
+    def start_netperf_client(self, opts, out):
+        self.cmd_async("/root/vimal/exports/netperf/netperf %s > %s" % (opts, out))

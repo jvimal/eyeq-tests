@@ -67,23 +67,32 @@ class TcpVsUdp(Expt):
         hlist.start_monitors(self.opts("dir"), 1e3)
 
         self.procs = []
-        # Start iperf servers
-        iperf = Iperf({'-p': 5001})
-        server = iperf.start_server(h1)
-        self.procs.append(server)
+        if self.opts("tcptest") == "xput":
+            # Start iperf servers
+            iperf = Iperf({'-p': 5001})
+            server = iperf.start_server(h1)
+            self.procs.append(server)
 
-        sleep(1)
-        # Start 1 TCP connection from h2 to h1
-        opts = {'-p': 5001,
-                '-c': h1.get_10g_ip(),
-                '-t': self.opts("t"),
-                'dir': self.opts("dir"),
-                '-P': 1}
+            sleep(1)
+            # Start 1 TCP connection from h2 to h1
+            opts = {'-p': 5001,
+                    '-c': h1.get_10g_ip(),
+                    '-t': self.opts("t"),
+                    'dir': self.opts("dir"),
+                    '-P': 1}
 
-        opts['-c'] = h1.get_tenant_ip(1)
-        client = Iperf(opts)
-        client = client.start_client(h2)
-        self.procs.append(client)
+            opts['-c'] = h1.get_tenant_ip(1)
+            client = Iperf(opts)
+            client = client.start_client(h2)
+            self.procs.append(client)
+        elif self.opts("tcptest") == "latency":
+            # Start netperf server
+            h1.start_netperf_server()
+            sleep(1)
+            out = os.path.join(self.opts("dir"), "netperf_rr.txt")
+            opts = "-v 2 -H %s -l %s " % (h1.get_tenant_ip(1), self.opts("t"))
+            opts += " -t TCP_RR -- -r %s -D " % self.opts("rrsize")
+            h2.start_netperf_client(opts=opts, out=out)
 
         if self.opts("traffic"):
             for hi in hlist.lst:
