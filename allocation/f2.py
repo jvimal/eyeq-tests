@@ -137,10 +137,10 @@ def optcap(flows, tx_flows, rx_flows):
             agg = []
             for flow in tx_flows[host][tid]:
                 var = flow_var(flow)
-                agg.append(add([var, "df"]))
+                agg.append(add([var]))
             cap = agg_var("tx", host, tid)
             capvars.append(cap)
-            constraints.append("0 <= %s <= (1+gf) (%s)" % (cap, add(agg)))
+            constraints.append("0 <= %s <= (1+gf) (%s+df)" % (cap, add(agg)))
             aggvars.append(add(agg))
             hostagg.append(cap)
         constraints.append("%s <= 1" % add(hostagg))
@@ -152,10 +152,10 @@ def optcap(flows, tx_flows, rx_flows):
             agg = []
             for flow in rx_flows[host][tid]:
                 var = flow_var(flow)
-                agg.append(add([var, "df"]))
+                agg.append(add([var]))
             cap = agg_var("rx", host, tid)
             capvars.append(cap)
-            constraints.append("0 <= %s <= (1+gf) (%s)" % (cap, add(agg)))
+            constraints.append("0 <= %s <= (1+gf) (%s+df)" % (cap, add(agg)))
             aggvars.append(add(agg))
             hostagg.append(cap)
         constraints.append("%s <= 1" % add(hostagg))
