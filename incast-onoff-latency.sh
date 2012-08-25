@@ -14,7 +14,7 @@ n=3
 basecmd="python tests/scenario.py --time $time -n $n --run tcpvsudp --exptid $exptid"
 
 for tcptest in latency; do
-for rrsize in 1,1 10000,10000; do
+for rrsize in 1,1; do
 for onoff in 5ms,20ms; do
 for iso in "" "--enable"; do
 	for proto in udp; do
@@ -33,7 +33,6 @@ for iso in "" "--enable"; do
 				--tcptest $tcptest \
 				--rrsize $rrsize
 
-			awk 'NR == 12 { print $5 }' $exptdir/l2/netperf_rr.txt > $exptdir/mean_latency_us.txt
 			# WITHOUT ISOLATION
 			#python tests/genconfig.py --type $proto --traffic incast \
 			#--size 100G --repeat -1 \
@@ -46,6 +45,24 @@ for iso in "" "--enable"; do
 		done
 	done
 done
+
+pushd ~/vimal/10g/exptdata/$exptid
+proto=udp
+mtu=9000
+exptdir1=$proto-mtu$mtu-$onoff-n$n-with-tcptest$tcptest-rrsize$rrsize
+exptdir2=$proto-mtu$mtu-$onoff-n$n-with--enable-tcptest$tcptest-rrsize$rrsize
+
+for edir in $exptdir1 $exptdir2; do
+	awk 'NR == 12 { print $5 }' $edir/l2/netperf_rr.txt > $edir/mean_latency_us.txt
+done
+
+python ~/iso/tests/plots/plot-rr-latency.py \
+	--rr $exptdir1/l2/netperf_rr.txt $exptdir2/l2/netperf_rr.txt \
+	--xlim 0,1000 \
+	--ymin 0.5 \
+	-o latency-$rrsize.png
+popd
+
 done
 done
 done
