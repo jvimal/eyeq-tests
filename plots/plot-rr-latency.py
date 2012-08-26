@@ -63,7 +63,13 @@ class RRParser:
             print 'exception', e
 
     def parse(self):
-        tps_line = self.lines[6]
+        line_no = 0
+        for line in self.lines:
+            if 'per sec' in line:
+                break
+            line_no += 1
+        line_no += 2
+        tps_line = self.lines[line_no]
         fields = rspaces.split(tps_line)
         self.tps = float(fields[5])
         try:
@@ -72,6 +78,12 @@ class RRParser:
         except:
             pass
 
+        line_no = 0
+        for line in self.lines:
+            if 'usec/Tran' in line:
+                break
+            line_no += 1
+        line_no += 1
         lat_line = self.lines[11]
         fields = rspaces.split(lat_line)
         self.latency = float(fields[4])
@@ -81,6 +93,12 @@ class RRParser:
         return
 
     def parse_histogram(self):
+        line_no = 0
+        for line in self.lines:
+            if 'Histogram' in line:
+                break
+            line_no += 1
+        line_no += 1
         unit = 1
         rsep = re.compile(r':\s+')
         ret = defaultdict(int)
@@ -89,7 +107,7 @@ class RRParser:
             nums = map(lambda e: int(e.strip()),
                        rsep.split(nums))
             return nums
-        for lno in xrange(14, 22):
+        for lno in xrange(line_no, line_no+8):
             nums = parse_buckets(self.lines[lno])
             for i,n in enumerate(nums):
                 ret[unit+i*unit] += n
@@ -121,6 +139,10 @@ def plot():
     plt.xlabel("usec")
     plt.ylabel("fraction")
     plt.xlim(tuple(map(int, args.xlim.split(','))))
+    plt.annotate('99th percentile', (160, 0.99), xytext=(10,-60), textcoords='offset points', size=20,
+                 arrowprops=dict(arrowstyle="simple",
+                                 fc="0.6", ec="none",
+                                 connectionstyle="arc3,rad=-0.3"))
     if args.xlog:
         plt.xscale("log")
     if args.ymin is not None:
