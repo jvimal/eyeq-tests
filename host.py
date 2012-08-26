@@ -326,7 +326,7 @@ class Host(object):
                 p.kill()
             except:
                 pass
-        self.cmd("killall -9 ssh iperf top bwm-ng memcached pimonitor %s" % extra)
+        self.cmd("killall -9 ssh iperf top bwm-ng memcached pimonitor netserver netperf %s" % extra)
 
     def ipt_ebt_flush(self):
         self.cmd("iptables -F; ebtables -t broute -F")
