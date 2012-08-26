@@ -1,6 +1,8 @@
 exptid=`date +%b%d-%H:%M`
 dir=/tmp/$exptid/incast-onoff-latency
 time=120
+sys=CloudSwitch
+sys=EyeQ
 
 ctrlc() {
 	killall -9 python
@@ -18,7 +20,7 @@ for rrsize in 1,1; do
 for onoff in 5ms,20ms; do
 for iso in "" "--enable"; do
 	for proto in udp; do
-		for mtu in 9000; do
+		for mtu in 1500; do
 			python tests/genconfig.py --type $proto --traffic incast \
 				--size 100G --repeat -1 \
 				--on-off $onoff -n $n --time 1000 \
@@ -48,7 +50,7 @@ done
 
 pushd ~/vimal/10g/exptdata/$exptid
 proto=udp
-mtu=9000
+mtu=1500
 exptdir1=$proto-mtu$mtu-$onoff-n$n-with-tcptest$tcptest-rrsize$rrsize
 exptdir2=$proto-mtu$mtu-$onoff-n$n-with--enable-tcptest$tcptest-rrsize$rrsize
 
@@ -56,11 +58,15 @@ for edir in $exptdir1 $exptdir2; do
 	awk 'NR == 12 { print $5 }' $edir/l2/netperf_rr.txt > $edir/mean_latency_us.txt
 done
 
-python ~/iso/tests/plots/plot-rr-latency.py \
-	--rr $exptdir1/l2/netperf_rr.txt $exptdir2/l2/netperf_rr.txt \
-	--xlim 0,1000 \
-	--ymin 0.5 \
-	-o latency-$rrsize.png
+for ext in png pdf; do
+	python ~/iso/tests/plots/plot-rr-latency.py \
+		--rr $exptdir2/l2/netperf_rr.txt $exptdir1/l2/netperf_rr.txt \
+		--xlim 0,1000 \
+		--ymin 0.5 \
+		-o latency-$rrsize.$ext \
+		--legend "with $sys" "without $sys"
+done
+
 popd
 
 done

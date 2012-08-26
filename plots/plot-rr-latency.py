@@ -4,13 +4,18 @@ import argparse
 import termcolor as T
 import re
 from collections import defaultdict
+from helper import *
+import plot_defaults
 import matplotlib as mp
-import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser(description="Plot netperf experiment outputs.")
 parser.add_argument('--rr',
                     nargs="+",
                     help="rr files to parse")
+
+parser.add_argument('--legend',
+                    nargs="+",
+                    help="labels for the rr files")
 
 parser.add_argument('--out', '-o',
                     help="save plot to file")
@@ -94,14 +99,24 @@ class RRParser:
         return ret
 
 def plot():
-    for f in args.rr:
+    markers='so'
+    for f,label,marker in zip(args.rr, args.legend, markers):
         r = RRParser(f)
         if not r.done:
             continue
         c = cdf(r.histogram)
-        plot_cdf(c[0], c[1], lw=2)
+        plot_cdf(c[0], c[1], lw=2, label=label, marker=marker, markersize=15)
     #print plt.figure(1).get_axes()
-    plt.figure(1).get_axes()[0].yaxis.set_major_locator(mp.ticker.MaxNLocator(10))
+    #plt.figure(1).get_axes()[0].yaxis.set_major_locator(mp.ticker.MaxNLocator(20))
+    #plt.figure(1).get_axes()[0].xaxis.set_major_locator(mp.ticker.MaxNLocator(20))
+    xticks = range(0, 1001, 100)
+    yticks = map(lambda e: e/100.0, range(50, 101, 5))
+    xticklabels = map(lambda e: "%s" % e if e%200 == 0 else ' ', xticks)
+    yticklabels = map(lambda e: "%.1f" % e if int(e*100)%10 == 0 else ' ', yticks)
+    plt.xticks(xticks, xticklabels)
+    plt.yticks(yticks, yticklabels)
+    plt.axhline(lw=1, color='r', y=0.99)
+    plt.legend(loc="center right")
     plt.grid(True)
     plt.xlabel("usec")
     plt.ylabel("fraction")
