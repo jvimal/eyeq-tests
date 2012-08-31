@@ -1,6 +1,8 @@
 exptid=`date +%b%d-%H:%M`
 dir=/tmp/$exptid/incast
 time=60
+n=1
+P=4
 
 ctrlc() {
 	killall -9 python
@@ -9,7 +11,7 @@ ctrlc() {
 
 trap ctrlc SIGINT
 
-basecmd="python tests/scenario.py --time $time -n 14 --run tcpvsudp --exptid $exptid"
+basecmd="python tests/scenario.py --time $time -n $n --run tcpvsudp --exptid $exptid"
 
 for iso in "--enabled"; do
 for size in 100G; do
@@ -18,14 +20,15 @@ for size in 100G; do
             # WITH ISOLATION
 			python tests/genconfig.py --type $proto --traffic incast \
 				--size $size --repeat 1000 \
-				--inter 5 -n 16 --time 1000 \
+				--inter 5 -n $((n+2)) --time 1000 \
 				--duration 100s \
-				--tenant 2 > ~/vimal/exports/14to1_${size}_${proto}_tenant
+				--tenant 2 > ~/vimal/exports/${n}to1_${size}_${proto}_tenant
 
 			$basecmd --dir $dir/$proto-mtu$mtu-s$size-with$iso $iso \
-				--traffic ~/vimal/exports/14to1_${size}_${proto}_tenant \
+				--traffic ~/vimal/exports/${n}to1_${size}_${proto}_tenant \
 				--mtu $mtu \
-				--ai 10 --md 4
+				--ai 10 --md 4 \
+				-P $P
 
             # WITHOUT ISOLATION
 			#python tests/genconfig.py --type $proto --traffic incast \
@@ -53,4 +56,4 @@ done
 
 popd
 
-echo udp 14to1 $dir >> TODO
+echo udp ${n}to1 $dir >> TODO
