@@ -86,6 +86,11 @@ parser.add_argument('--static',
                     help="Static bandwidth for UDP",
                     default=False)
 
+parser.add_argument("--pin",
+                    action="store_true",
+                    help="Pin loadgen to cpus",
+                    default=False)
+
 LOADGEN_TID = 1
 # hadoop tenant ids start from 2
 HADOOP_TID = 2
@@ -168,7 +173,9 @@ class HadoopTrace(Expt):
         for h in self.hlist.lst:
             ip = h.get_tenant_ip(tid)
             cmd = "mkdir -p %s; " % dir
-            cmd += "taskset -c %s,%s %s -i %s -vv " % (cpu, cpu+1, LOADGEN, ip)
+            if args.pin:
+                cmd += "taskset -c %s,%s  " % (cpu, cpu+1)
+            cmd += " %s -i %s -vv " % (LOADGEN, ip)
             cmd += " -l %s -p 1000000 -f %s > %s" % (port, traffic, out)
             h.cmd_async(cmd)
 
@@ -211,8 +218,11 @@ class HadoopTrace(Expt):
             sys.exit(0)
 
         self.hlist.set_mtu(self.opts("mtu"))
-        self.hlist.cmd("killall -9 irqbalance")
-        self.hlist.configure_tx_interrupt_affinity()
+        if args.pin:
+            self.hlist.cmd("killall -9 irqbalance")
+            self.hlist.configure_tx_interrupt_affinity()
+        else:
+            self.hlist.cmd("killall -9 irqbalance; irqbalance")
         if self.opts("enabled") or self.opts("weighted") or self.opts("inv_weighted"):
             self.hlist.insmod()
         self.create_tenants()
