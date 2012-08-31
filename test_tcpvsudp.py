@@ -74,12 +74,12 @@ class TcpVsUdp(Expt):
             self.procs.append(server)
 
             sleep(1)
-            # Start 1 TCP connection from h2 to h1
+            # Start P TCP connection from h2 to h1
             opts = {'-p': 5001,
                     '-c': h1.get_10g_ip(),
                     '-t': self.opts("t"),
                     'dir': self.opts("dir"),
-                    '-P': 1}
+                    '-P': self.opts("P")}
 
             opts['-c'] = h1.get_tenant_ip(1)
             client = Iperf(opts)
@@ -91,7 +91,7 @@ class TcpVsUdp(Expt):
             sleep(1)
             out = os.path.join(self.opts("dir"), "netperf_rr.txt")
             opts = "-v 2 -H %s -l %s " % (h1.get_tenant_ip(1), self.opts("t"))
-            opts += " -t TCP_RR -- -r %s -D " % self.opts("rrsize")
+            opts += " -t TCP_RR -D 1,s -- -r %s -D " % self.opts("rrsize")
             h2.start_netperf_client(opts=opts, out=out)
 
         if self.opts("traffic"):
