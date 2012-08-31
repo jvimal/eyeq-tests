@@ -39,8 +39,13 @@ parser.add_argument('--maxx',
 parser.add_argument('--minx',
                     dest="minx",
                     type=int,
-                    default=500,
-                    help="Max x axis (seconds)")
+                    default=0,
+                    help="Min x axis (seconds)")
+
+parser.add_argument('--inter',
+                    type=int,
+                    default=50,
+                    help="Inter-tick length")
 
 args = parser.parse_args()
 plot_defaults.rcParams['figure.figsize'] = 10, 3.5
@@ -102,6 +107,8 @@ def get_num_tenants(dir):
     return len(glob.glob("%s/l1/sort-*.txt" % dir))
 
 for i,dir in enumerate(args.dirs):
+    if os.path.isdir(dir) != True:
+        continue
     num_tenants = get_num_tenants(dir)
     print num_tenants
     for j in xrange(num_tenants):
@@ -110,7 +117,7 @@ for i,dir in enumerate(args.dirs):
         for d in glob.glob(dir + "/*"):
             print d
             fcts = parse_fcts(os.path.join(d, "sort-%d.txt" % j))
-            print fcts.values()
+            print j,fcts.values()
             all_values += fcts.values()
             if args.every:
                 plot_cdf(fcts.values(), alpha=0.3, color=col)
@@ -125,7 +132,7 @@ for i,dir in enumerate(args.dirs):
     #plt.xticks(locs, map(lambda e: '%.1f' % e, locs))
     yticks = map(lambda e: (e/5.0), range(0, 6))
     plt.yticks(yticks, map(lambda e: '%.1f' % e, yticks))
-    xticks = range(args.minx, args.maxx+1, 500)
+    xticks = range(args.minx, args.maxx+1, args.inter)
     plt.xticks(xticks, map(str, xticks))
     #plt.figure()
 
