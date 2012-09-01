@@ -45,14 +45,15 @@ class TcpVsUdp(Expt):
             hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", self.opts("vqrate"))
             hlist.perfiso_set("ISO_VQ_UPDATE_INTERVAL_US", self.opts("vqupdate"))
             hlist.perfiso_set("ISO_RFAIR_INITIAL", 9000)
-            if self.opts("aimd_dt_us"):
-                hlist.perfiso_set("ISO_RFAIR_DECREASE_INTERVAL_US", self.opts("aimd_dt_us"))
-                hlist.perfiso_set("ISO_RFAIR_INCREASE_INTERVAL_US", self.opts("aimd_dt_us"))
+            # don't muck around with parameters
+            #if self.opts("aimd_dt_us"):
+                #hlist.perfiso_set("ISO_RFAIR_DECREASE_INTERVAL_US", self.opts("aimd_dt_us"))
+                #hlist.perfiso_set("ISO_RFAIR_INCREASE_INTERVAL_US", self.opts("aimd_dt_us"))
                 # At 500us, we increment by 1Mbps.  So let's use this
                 # to scale our increment accordingly
-                increment = max(1, self.opts("ai") * int(self.opts("aimd_dt_us")) / 500)
-                hlist.perfiso_set("ISO_RFAIR_INCREMENT", "%s" % increment)
-                hlist.perfiso_set("ISO_FALPHA", "%s" % self.opts("md"))
+                #increment = max(1, self.opts("ai") * int(self.opts("aimd_dt_us")) / 500)
+                #hlist.perfiso_set("ISO_RFAIR_INCREMENT", "%s" % increment)
+                #hlist.perfiso_set("ISO_FALPHA", "%s" % self.opts("md"))
         else:
             hlist.perfiso_set("IsoAutoGenerateFeedback", 0)
             hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", 100000)
@@ -67,23 +68,32 @@ class TcpVsUdp(Expt):
         hlist.start_monitors(self.opts("dir"), 1e3)
 
         self.procs = []
-        # Start iperf servers
-        iperf = Iperf({'-p': 5001})
-        server = iperf.start_server(h1)
-        self.procs.append(server)
+        if self.opts("tcptest") == "xput":
+            # Start iperf servers
+            iperf = Iperf({'-p': 5001})
+            server = iperf.start_server(h1)
+            self.procs.append(server)
 
-        sleep(1)
-        # Start 1 TCP connection from h2 to h1
-        opts = {'-p': 5001,
-                '-c': h1.get_10g_ip(),
-                '-t': self.opts("t"),
-                'dir': self.opts("dir"),
-                '-P': 1}
+            sleep(1)
+            # Start P TCP connection from h2 to h1
+            opts = {'-p': 5001,
+                    '-c': h1.get_10g_ip(),
+                    '-t': self.opts("t"),
+                    'dir': self.opts("dir"),
+                    '-P': self.opts("P")}
 
-        opts['-c'] = h1.get_tenant_ip(1)
-        client = Iperf(opts)
-        client = client.start_client(h2)
-        self.procs.append(client)
+            opts['-c'] = h1.get_tenant_ip(1)
+            client = Iperf(opts)
+            client = client.start_client(h2)
+            self.procs.append(client)
+        elif self.opts("tcptest") == "latency":
+            # Start netperf server
+            h1.start_netperf_server()
+            sleep(1)
+            out = os.path.join(self.opts("dir"), "netperf_rr.txt")
+            opts = "-v 2 -H %s -l %s " % (h1.get_tenant_ip(1), self.opts("t"))
+            opts += " -t TCP_RR -D 1,s -- -r %s -D " % self.opts("rrsize")
+            h2.start_netperf_client(opts=opts, out=out)
 
         if self.opts("traffic"):
             for hi in hlist.lst:

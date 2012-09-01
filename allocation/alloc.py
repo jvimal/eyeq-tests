@@ -6,6 +6,7 @@ import re
 import f1
 import f2
 import f3
+import f4
 
 parser = argparse.ArgumentParser(description="Allocation algorithm.")
 
@@ -72,4 +73,5 @@ def main():
     #f1.print_formulation(flows, tx_flows, rx_flows)
     f2.print_formulation(flows, tx_flows, rx_flows)
     #f3.print_formulation(flows, tx_flows, rx_flows)
+    #f4.print_formulation(flows, tx_flows, rx_flows)
 main()

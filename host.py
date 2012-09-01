@@ -356,7 +356,7 @@ class Host(object):
                 p.kill()
             except:
                 pass
-        self.cmd("killall -9 ssh iperf top bwm-ng memcached pimonitor %s" % extra)
+        self.cmd("killall -9 ssh iperf top bwm-ng memcached pimonitor netserver netperf %s" % extra)
 
     def ipt_ebt_flush(self):
         self.cmd("iptables -F; ebtables -t broute -F")
@@ -487,3 +487,9 @@ class Host(object):
 
     def netstat_end(self, dir):
         self.cmd("netstat -s > %s/netstat_end.txt" % dir)
+
+    def start_netperf_server(self):
+        self.cmd("killall -9 netserver; /root/vimal/exports/netperf/netserver")
+
+    def start_netperf_client(self, opts, out):
+        self.cmd_async("/root/vimal/exports/netperf/netperf %s > %s" % (opts, out))

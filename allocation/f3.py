@@ -66,7 +66,8 @@ def formulate(flows, tx_flows, rx_flows):
                 hostflowagg.append(var)
             cap = agg_var("rx", host, tid)
             constraints.append("0 <= %s <= 1" % cap)
-            constraints.append("%s <= %s" % (add(tenantflowagg), cap))
+            #constraints.append("%s <= %s + (1 - (%s))" % (add(tenantflowagg), cap, add(tenantflowagg)))
+            constraints.append("%s <= %s + (1 - (%s))" % (add(tenantflowagg), cap))
             capvars.append(cap)
             hostcapagg.append(cap)
         allvars += capvars

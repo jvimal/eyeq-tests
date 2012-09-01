@@ -103,6 +103,18 @@ parser.add_argument('--md',
                     type=int,
                     default=8)
 
+parser.add_argument('--tcptest',
+                    dest="tcptest",
+                    help="xput / latency test?",
+                    choices=["xput", "latency"],
+                    default="xput")
+
+parser.add_argument('--rrsize',
+                    dest="rrsize",
+                    help="tcp latency test (rr size): request,response",
+                    default="1,1")
+
+
 args = parser.parse_args()
 
 def indent(s, depth=1, char='\t'):
@@ -145,7 +157,8 @@ scen.add("tcpvsudp", TcpVsUdp(t=args.time, enabled=args.enabled,
                               ai=args.ai,
                               md=args.md,
                               aimd_dt_us=args.aimd_dt_us,
-                              start_udp=args.start_udp, traffic=args.traffic))
+                              start_udp=args.start_udp, traffic=args.traffic,
+                              tcptest=args.tcptest, rrsize=args.rrsize))
 scen.add("udp", Udp(t=args.time, enabled=args.enabled,
                     P=args.P, dir=args.dir, start_udp=args.start_udp))
 scen.add("memcached", Memcached(t=args.time, dir=args.dir, case=args.case))

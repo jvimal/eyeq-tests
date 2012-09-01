@@ -58,7 +58,7 @@ for mtu in 9000; do
 	done
 done
 
-sys=CloudSwitch
+sys=EyeQ
 pushd ../exptdata/$exptid
 for workload in ~/vimal/exports/memcached_cluster/*; do
 for ext in png pdf; do
