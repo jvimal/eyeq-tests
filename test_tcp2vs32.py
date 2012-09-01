@@ -17,6 +17,17 @@ if __name__ == "__main__":
                         help="Enable perfisolation",
                         default=False)
 
+    parser.add_argument('--1g',
+                        dest="oneg",
+                        action="store_true",
+                        help="Use bridge as opposed to direct, which will be on eth1 at 1Gb/s.",
+                        default=False)
+
+    parser.add_argument('--udp',
+                        action="store_true",
+                        help="Use UDP",
+                        default=False)
+
     parser.add_argument('--time', '-t',
                         type=int,
                         dest="t",
@@ -46,30 +57,38 @@ class Tcp2Vs32(Expt):
     def start(self):
         h1 = Host("10.0.1.1")
         h2 = Host("10.0.1.2")
-        h3 = Host("10.0.1.3")
+        h3 = Host("10.0.1.4")
         self.hlist = HostList(h1, h2, h3)
         hlist = self.hlist
 
-        hlist.prepare_iface()
+        for h in hlist.lst:
+            h.prepare_iface()
+            h.prepare_iface(direct=not args.oneg)
         hlist.configure_rps()
         hlist.rmmod()
         if self.opts("enabled"):
-            hlist.insmod()
+            for h in hlist.lst:
+                h.insmod(direct=not args.oneg)
             self.log("Creating two tenants")
             #h1.create_tcp_tenant(server_ports=[5001], tid=1)
             #h1.create_tcp_tenant(server_ports=[5002], tid=2)
             #h2.create_tcp_tenant(server_ports=[5001], tid=1)
             #h3.create_tcp_tenant(server_ports=[5002], tid=2)
-            h1.create_ip_tenant(tid=1, weight=self.opts("wtcp"))
-            h1.create_ip_tenant(tid=2)
+            h1.create_ip_tenant(tid=1, weight=self.opts("wtcp"), direct=not args.oneg)
+            h1.create_ip_tenant(tid=2, direct=not args.oneg)
 
-            h2.create_ip_tenant(tid=1)
-            h3.create_ip_tenant(tid=1)
+            h2.create_ip_tenant(tid=1, direct=not args.oneg)
+            h3.create_ip_tenant(tid=1, direct=not args.oneg)
 
         if self.opts("enabled"):
             hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", self.opts("vqrate"))
             hlist.perfiso_set("IsoAutoGenerateFeedback", 1)
             hlist.perfiso_set("ISO_VQ_UPDATE_INTERVAL_US", 25)
+            if self.opts("oneg"):
+                hlist.perfiso_set("ISO_VQ_MARK_THRESH_BYTES", 30000)
+                hlist.perfiso_set("ISO_VQ_MAX_BYTES", 60000)
+                hlist.perfiso_set("ISO_RFAIR_INCREASE_INTERVAL_US", 2000)
+                hlist.perfiso_set("ISO_RFAIR_DECREASE_INTERVAL_US", 2000)
         hlist.start_monitors(self.opts("dir"), 1e3)
 
         self.procs = []
@@ -84,7 +103,7 @@ class Tcp2Vs32(Expt):
         client = Iperf({'-p': 5001,
                         '-c': h1.get_10g_ip(),
                         '-t': self.opts("t"),
-                        '-P': 1})
+                        '-P': 2})
         if self.opts("enabled"):
             client.opts["-c"] = h1.get_tenant_ip(1)
         client = client.start_client(h2)
@@ -97,11 +116,15 @@ class Tcp2Vs32(Expt):
                         '-P': self.opts("P")})
         if self.opts("enabled"):
             client.opts["-c"] = h1.get_tenant_ip(2)
+        if self.opts("udp"):
+            client.opts["-b"] = '3G'
         client = client.start_client(h3)
         self.procs.append(client)
 
     def stop(self):
         self.hlist.remove_tenants()
+        if args.oneg:
+            self.hlist.remove_bridge(False)
         self.hlist.copy("l1", self.opts("dir"))
         for p in self.procs:
             p.kill()

@@ -21,6 +21,9 @@ def pick_host_ip(i):
 def pick_10g_ip(i):
     return host_ips[i].replace("10.0.1", "192.168.2")
 
+def pick_1g_ip(i):
+    return host_ips[i].replace("10.0.1", "192.168.1")
+
 def pick_host_name(i):
     return host_ips[i].replace("10.0.1.", "l")
 
@@ -36,6 +39,12 @@ PI_DEV = {
 
     19: eth1,
     20: eth1,
+    }
+
+PI_1G_DEV = {
+    1: eth1,
+    2: eth1,
+    4: eth1,
     }
 
 class HostList(object):
@@ -163,32 +172,50 @@ class Host(object):
         id = int(self.addr.split('.')[-1])
         return PI_DEV.get(id, "eth2")
 
+    def get_1g_dev(self):
+        id = int(self.addr.split('.')[-1])
+        return PI_1G_DEV.get(id, None)
+
     def get_10g_ip(self):
         id = int(self.addr.split('.')[-1])
         return "192.168.2.%d" % id
+
+    def get_1g_ip(self):
+        id = int(self.addr.split('.')[-1])
+        return "192.168.1.%d" % id
 
     def get_tenant_ip(self, tid=1):
         assert(tid > 0 and tid < 255)
         myindex = int(self.addr.split('.')[-1])
         return "11.0.%d.%d" % (tid, myindex)
 
-    def insmod(self, mod=PI_MODULE, params="iso_param_dev=eth2", rmmod=True):
-        params = "iso_param_dev=%s" % self.get_10g_dev()
+    def insmod(self, mod=PI_MODULE, params="iso_param_dev=eth2", rmmod=True, direct=True):
+        if direct:
+            params = "iso_param_dev=%s" % self.get_10g_dev()
+        else:
+            params = "iso_param_dev=%s" % self.get_1g_dev()
         cmd = "insmod %s %s" % (mod, params)
         if rmmod:
             cmd = "rmmod perfiso; " + cmd
         self.cmd(cmd)
 
     def prepare_iface(self, iface=None, ip=None, direct=True):
+        self.direct = direct
         if direct:
             # No need for bridge
             dev = self.get_10g_dev()
             self.cmd_async("ifdown %s; ifup %s" % (dev, dev))
             return
         if iface is None:
-            iface = self.get_10g_dev()
+            if direct:
+                iface = self.get_10g_dev()
+            else:
+                iface = self.get_1g_dev()
         if ip is None:
-            ip = self.get_10g_ip()
+            if direct:
+                ip = self.get_10g_ip()
+            else:
+                ip = self.get_1g_ip()
         cmds = ["ifconfig %s 0" % iface,
                 "ifconfig br0 down",
                 "brctl delbr br0",
@@ -203,7 +230,10 @@ class Host(object):
         # So far, this has been done explicitly by binds(), but I do not want
         # to try it with Hadoop!
         myindex = int(self.addr.split('.')[-1])
-        dev = self.get_10g_dev()
+        if self.direct:
+            dev = self.get_10g_dev()
+        else:
+            dev = "br0"
         self.delay = True
         for tid in xrange(1, 1+num_tenants):
             cmd = "route add -net 11.0.%d.0/24 dev %s:%d" % (tid, dev, tid)
@@ -214,8 +244,8 @@ class Host(object):
     def remove_bridge(self, direct=True):
         if direct:
             return
-        iface = self.get_10g_dev()
-        ip = self.get_10g_ip()
+        iface = self.get_1g_dev()
+        ip = self.get_1g_ip()
         cmds = ["ifconfig br0 0 down",
                 "brctl delbr br0",
                 "ifconfig %s %s up" % (iface, ip)]
