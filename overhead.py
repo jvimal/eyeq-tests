@@ -91,7 +91,12 @@ class RxOverhead(Expt):
 
         h1.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", self.opts('rate'))
         h1.perfiso_set("ISO_VQ_UPDATE_INTERVAL_US", self.opts("vqupdate"))
-
+        if True:
+            # Only for QCN tests
+            perrate = int(self.opts("rate")) / n
+            dt_qcn = min(1200, 100 * 1500 * 8 / perrate)
+            hlist.perfiso_set("ISO_RFAIR_INCREASE_INTERVAL_US", dt_qcn)
+            hlist.perfiso_set("ISO_RFAIR_DECREASE_INTERVAL_US", dt_qcn)
         # Create all IP routes etc.
         for i in xrange(n):
             hlist.create_ip_tenant(i+1)
@@ -110,6 +115,7 @@ class RxOverhead(Expt):
                            '-P': parallel,
                            '-i': '1',
                            '-c': h1.get_tenant_ip(i+1),
+                           '-B': h2.get_tenant_ip(i+1),
                            'dir': os.path.join(self.opts("dir"), "iperf"),
                            '-t': self.opts('t')})
             self.procs.append(iperf.start_client(h2))
