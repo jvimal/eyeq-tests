@@ -43,6 +43,11 @@ parser.add_argument('--mcperf',
                     action="store_true",
                     dest="mcperf")
 
+parser.add_argument('--only-latency',
+                    dest="only_latency",
+                    default=False,
+                    action="store_true")
+
 args = parser.parse_args()
 if args.legend is None:
     args.legend = args.files
@@ -195,7 +200,7 @@ def plot_latency(ax):
             x, yc, yp = parse_latency(f)
         ax.plot(x, yc, lw=4, label=leg, ls=ls[i], color=colours[i])#, marker='so^v'[i], markersize=15, markevery=300)
 
-    ax.grid()
+    ax.grid(True)
     fontP = FontProperties()
     fontP.set_size('large')
     ax.legend(loc="lower right", prop=fontP)
@@ -205,10 +210,18 @@ def plot_latency(ax):
     if args.log:
         ax.set_xscale("log")
 
-m.rc('figure', figsize=(10*2, 4.5))
-fig = plt.figure()
-plot_ops(fig.add_subplot(1, 2, 1))
-plot_latency(fig.add_subplot(1, 2, 2))
+
+if args.only_latency:
+    m.rc('figure', figsize=(10, 3.5))
+    fig = plt.figure()
+    fig.subplots_adjust(bottom=0.25)
+    plot_latency(fig.add_subplot(1, 1, 1))
+else:
+    m.rc('figure', figsize=(10*2, 3.5))
+    fig = plt.figure()
+    fig.subplots_adjust(bottom=0.25)
+    plot_ops(fig.add_subplot(1, 2, 1))
+    plot_latency(fig.add_subplot(1, 2, 2))
 
 if args.out:
     plt.savefig(args.out)
