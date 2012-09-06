@@ -95,6 +95,9 @@ parser.add_argument('--headroom',
                     action="store_true",
                     dest="headroom")
 
+parser.add_argument('--xlabels',
+                    help="x tick labels: comma sep")
+
 args = parser.parse_args()
 LOADGEN_OUTPUT = 'loadgen'
 
@@ -204,16 +207,19 @@ def plot_rate(ax, data, dir="tx", title=args.title, markevery=args.every):
         pass
     ax.set_title(title)
     ax.grid(True)
-    ax.set_xlabel("Time (s)")
+    ax.set_xlabel("Time (ms)")
     ax.set_ylabel("Rate")
     ax.set_ylim((0, args.maxy+1))
     ax.set_yticks(range(1000, args.maxy+1, 2000))
-    ax.set_yticklabels(map(lambda e: '%dG' % (e/1000), range(1000, 10001, 2000)))
+    ax.set_yticklabels(map(lambda e: '%dG' % (e/1000), range(1000, args.maxy+1, 2000)))
     ax.legend(loc="upper right")
     if args.range:
         try:
             lo,hi = map(float, args.range.split(':'))
             ax.set_xlim((lo, hi))
+            if args.xlabels:
+                print 'setting', args.xlabels
+                ax.set_xticklabels(args.xlabels.split(','))
         except:
             pass
     return
