@@ -493,3 +493,7 @@ class Host(object):
 
     def start_netperf_client(self, opts, out):
         self.cmd_async("/root/vimal/exports/netperf/netperf %s > %s" % (opts, out))
+
+    def set_dev_rx_coalesce(self):
+        dev = self.get_10g_dev()
+        self.cmd("ethtool -C %s rx-usecs-high 25" % dev)
