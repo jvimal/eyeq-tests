@@ -90,6 +90,7 @@ class RxOverhead(Expt):
             hlist.create_ip_tenant(i+1)
 
         h1.start_monitors(self.opts('dir'))
+        hlist.setup_tenant_routes(n)
 
         self.log("Starting %d iperfs" % n)
         # Start iperfs servers

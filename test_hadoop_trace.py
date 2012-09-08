@@ -222,7 +222,8 @@ class HadoopTrace(Expt):
             self.hlist.cmd("killall -9 irqbalance")
             self.hlist.configure_tx_interrupt_affinity()
         else:
-            self.hlist.cmd("killall -9 irqbalance; irqbalance")
+            #self.hlist.cmd("killall -9 irqbalance; irqbalance")
+            self.hlist.configure_interrupt_affinity()
         if self.opts("enabled") or self.opts("weighted") or self.opts("inv_weighted"):
             self.hlist.insmod()
         self.create_tenants()

@@ -77,6 +77,7 @@ class Host(object):
         self.added_root_qdisc = False
         self.ip_to_classids = {}
         self.next_classid = 1
+        self.direct = True
 
     def set_dryrun(self, state=True):
         self.dryrun = state
@@ -383,6 +384,11 @@ class Host(object):
         dev = self.get_10g_dev()
         c = "n=`grep '%s-tx' /proc/interrupts | awk -F ':' '{print $1}' | tr -d '\\n '`; " % dev
         c += " echo 0 > /proc/irq/$n/smp_affinity; "
+        self.cmd(c)
+
+    def configure_interrupt_affinity(self):
+        dev = self.get_10g_dev()
+        c = "python ~/vimal/exports/set-affinity.py %s" % dev
         self.cmd(c)
 
     # Monitoring scripts
