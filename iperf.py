@@ -7,7 +7,8 @@ class Iperf:
         self.opts = opts
 
     def start_server(self, host, cpu=None):
-        cmd = "iperf -s -p %d" % (self.opts.get('-p', 5001))
+        cmd = "ulimit -n 102400; "
+        cmd += "iperf -s -p %d" % (self.opts.get('-p', 5001))
         if self.opts.get('-u', False):
             cmd += " -u -l32k"
         if self.opts.get('-B', False):
@@ -25,7 +26,8 @@ class Iperf:
         t = self.opts.get('-t', 30)
         interval = self.opts.get('-i', '0.1')
 
-        cmd = "iperf -c %s -i %s -P %s -t %d" % (server_ip, interval, parallel, t)
+        cmd = "ulimit -n 102400; "
+        cmd += "iperf -c %s -i %s -P %s -t %d" % (server_ip, interval, parallel, t)
         if self.opts.get('-b', False): # -b implies UDP, which is weird
             cmd += " -b %s -l32k" % self.opts.get('-b')
         if self.opts.get('-B', False):
