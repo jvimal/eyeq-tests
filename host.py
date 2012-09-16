@@ -199,6 +199,7 @@ class Host(object):
         if rmmod:
             cmd = "rmmod perfiso; " + cmd
         self.cmd(cmd)
+        self.insert_r2d2()
 
     def prepare_iface(self, iface=None, ip=None, direct=True):
         self.direct = direct
@@ -239,6 +240,12 @@ class Host(object):
         for tid in xrange(1, 1+num_tenants):
             cmd = "route add -net 11.0.%d.0/24 dev %s:%d" % (tid, dev, tid)
             self.cmd(cmd)
+            if False:
+                # This does not enable fast retransmissions.   Find out why...
+                src = self.get_tenant_ip(tid)
+                cmd = "/root/vimal/exports/ip route change 11.0.%d.0/24 src %s rto_min 1ms dev %s:%d" % (tid, src, dev, tid)
+                self.cmd(cmd)
+
         self.delayed_cmds_execute()
         return
 
@@ -358,6 +365,7 @@ class Host(object):
             except:
                 pass
         self.cmd("killall -9 ssh iperf top bwm-ng memcached pimonitor netserver netperf %s" % extra)
+        self.rmmod("r2d2")
 
     def ipt_ebt_flush(self):
         self.cmd("iptables -F; ebtables -t broute -F")
@@ -503,3 +511,7 @@ class Host(object):
     def set_dev_rx_coalesce(self):
         dev = self.get_10g_dev()
         self.cmd("ethtool -C %s rx-usecs-high 25" % dev)
+
+    def insert_r2d2(self):
+        self.cmd("insmod ~/vimal/exports/r2d2.ko l25_subnet=11.0.0.0 mask=8")
+
