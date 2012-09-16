@@ -37,9 +37,14 @@ class TcpVsUdp(Expt):
         h1.perfiso_set_vq_weight(vq=h1.get_tenant_ip(1),
                                  weight=self.opts("wtcp"))
 
+        if self.opts("mtu"):
+            hlist.set_mtu(self.opts("mtu"))
+        else:
+            hlist.set_mtu("1500")
         h2.create_ip_tenant(tid=1)
         hlist_udp.create_ip_tenant(2)
-
+        sleep(1)
+        hlist.setup_tenant_routes()
         if self.opts("enabled"):
             hlist.perfiso_set("IsoAutoGenerateFeedback", "1")
             hlist.perfiso_set("ISO_VQ_DRAIN_RATE_MBPS", self.opts("vqrate"))
@@ -60,11 +65,6 @@ class TcpVsUdp(Expt):
             hlist.perfiso_set("ISO_VQ_UPDATE_INTERVAL_US", 1000000)
             hlist.perfiso_set("ISO_RFAIR_INITIAL", 100000)
             hlist.perfiso_set("ISO_MAX_TX_RATE", 100000)
-
-        if self.opts("mtu"):
-            hlist.set_mtu(self.opts("mtu"))
-        else:
-            hlist.set_mtu("1500")
         hlist.start_monitors(self.opts("dir"), 1e3)
 
         self.procs = []
