@@ -28,8 +28,15 @@ parser.add_argument('-n',
                     dest="n",
                     action="store",
                     type=int,
-                    help="Number of VMs/tenants.",
+                    help="Number of RLs.",
                     default=1)
+
+parser.add_argument('-P',
+                    dest="P",
+                    action="store",
+                    type=int,
+                    help="Number of TCP connections.",
+                    default=20000)
 
 parser.add_argument('-t',
                     dest="t",
@@ -71,9 +78,13 @@ class RlOverhead(Expt):
             # insert htb qdiscs in hierarchy
             dev = h1.get_10g_dev()
             ceil = '%sGbit' % (int(self.opts('rate')) / 1000)
-            cmd = "tc qdisc add dev %s root handle 1: htb default 1000" % dev
+            cmd = "tc qdisc add dev %s root handle 1: htb default 1" % dev
+            h1.cmd(cmd)
+            cmd = "tc class add dev %s classid 1:1 parent 1: htb" % dev
+            cmd += " rate %s ceil %s mtu 64000" % (ceil, ceil)
             h1.cmd(cmd)
 
+        h1.start_monitors(self.opts("dir"))
         # Start iperf server
         iperf = Iperf({'-p': 5001})
         self.procs.append(iperf.start_server(h2))
@@ -81,7 +92,7 @@ class RlOverhead(Expt):
 
         # Start all iperf clients
         iperf = Iperf({'-p': 5001,
-                       '-P': n * 2,
+                       '-P': self.opts("P"),
                        '-i': '10',
                        '-c': h2.get_10g_ip(),
                        'dir': os.path.join(self.opts("dir"), "iperf"),
