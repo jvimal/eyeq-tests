@@ -119,6 +119,8 @@ class MemcachedCluster(Expt):
         self.hlist.remove_qdiscs()
         if self.opts("enable"):
             self.hlist.insmod()
+        else:
+            self.hlist.insert_r2d2("192.168.0.0", 16)
         # Create a static rate limiter for UDP tenant
         if self.opts("static"):
             for h in self.hlist.lst:

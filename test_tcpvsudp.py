@@ -88,6 +88,7 @@ class TcpVsUdp(Expt):
             self.procs.append(client)
         elif self.opts("tcptest") == "latency":
             # Start netperf server
+            hlist.cmd("rmmod r2d2")
             h1.start_netperf_server()
             sleep(1)
             out = os.path.join(self.opts("dir"), "netperf_rr.txt")

@@ -512,6 +512,6 @@ class Host(object):
         dev = self.get_10g_dev()
         self.cmd("ethtool -C %s rx-usecs-high 25" % dev)
 
-    def insert_r2d2(self):
-        self.cmd("insmod ~/vimal/exports/r2d2.ko l25_subnet=11.0.0.0 mask=8")
+    def insert_r2d2(self, subnet="11.0.0.0", mask=8):
+        self.cmd("insmod ~/vimal/exports/r2d2.ko l25_subnet=%s mask=%s" % (subnet, mask))
 
