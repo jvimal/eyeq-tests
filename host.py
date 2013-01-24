@@ -191,13 +191,15 @@ class Host(object):
         return "11.0.%d.%d" % (tid, myindex)
 
     def insmod(self, mod=PI_MODULE, params="iso_param_dev=eth2", rmmod=True, direct=True):
-        if direct:
-            params = "iso_param_dev=%s" % self.get_10g_dev()
-        else:
-            params = "iso_param_dev=%s" % self.get_1g_dev()
-        cmd = "insmod %s %s" % (mod, params)
+        dev = self.get_10g_dev()
+        if not direct:
+            dev = self.get_1g_dev()
+        params = "iso_param_dev=%s" % self.get_10g_dev()
+        cmd = ''
+        cmd += "insmod %s %s; " % (mod, params)
+        cmd += "tc qdisc add dev %s root handle 1: htb default 1; " % (self.get_10g_dev())
         if rmmod:
-            cmd = "rmmod perfiso; " + cmd
+            cmd = ("tc qdisc del dev %s root; rmmod sch_htb; rmmod perfiso; " % dev) + cmd
         self.cmd(cmd)
         self.insert_r2d2()
 
