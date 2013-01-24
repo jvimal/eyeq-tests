@@ -196,7 +196,7 @@ class Host(object):
             dev = self.get_1g_dev()
         params = "iso_param_dev=%s" % self.get_10g_dev()
         cmd = ''
-        cmd += "insmod %s %s; " % (mod, params)
+        cmd += "mount -a; insmod %s %s; " % (mod, params)
         cmd += "tc qdisc add dev %s root handle 1: htb default 1; " % (self.get_10g_dev())
         if rmmod:
             cmd = ("tc qdisc del dev %s root; rmmod sch_htb; rmmod perfiso; " % dev) + cmd

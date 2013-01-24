@@ -259,6 +259,8 @@ class MemcachedCluster(Expt):
         #hlist.perfiso_set("ISO_VQ_UPDATE_INTERVAL_US", 25)
         self.prepare_iface()
         self.hlist.setup_tenant_routes(2)
+        self.hlist.cmd("killall -9 irqbalance; ")
+        self.hlist.configure_interrupt_affinity()
 
         hservers.start_memcached()
         sleep(2)

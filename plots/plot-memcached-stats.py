@@ -114,7 +114,7 @@ def plot_ops(ax):
             ys = values['total']
             ax.plot(ys, lw=2, label=leg)
             ax.set_xlabel("Samples")
-    ax.grid()
+    ax.grid(True)
     fontP = FontProperties()
     fontP.set_size('small')
     ax.legend(loc="lower right", prop=fontP)

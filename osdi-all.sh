@@ -26,6 +26,7 @@ function micro_bursty {
 
 function macro_multihadoop {
 	bash tests/hadoop-multi.sh
+	bash tests/hadoop-multi-10T.sh
 }
 
 function macro_memcached_high {
