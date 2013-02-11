@@ -146,28 +146,34 @@ class Host(object):
         self.cmd(c)
 
     def perfiso_create_txc(self, name):
-        c = "echo -n %s > /sys/module/perfiso/parameters/create_txc" % name
+        dev = self.get_10g_dev()
+        c = "echo -n dev %s %s > /sys/module/perfiso/parameters/create_txc" % (dev, name)
         self.cmd(c)
 
     def perfiso_create_vq(self, name):
-        c = "echo -n %s > /sys/module/perfiso/parameters/create_vq" % name
+        dev = self.get_10g_dev()
+        c = "echo -n dev %s %s > /sys/module/perfiso/parameters/create_vq" % (dev, name)
         self.cmd(c)
 
     def perfiso_assoc_txc_vq(self, txc, vq):
-        c = "echo -n associate txc %s vq %s > /sys/module/perfiso/parameters/assoc_txc_vq"
-        c = c % (txc, vq)
+        dev = self.get_10g_dev()
+        c = "echo -n dev %s associate txc %s vq %s > /sys/module/perfiso/parameters/assoc_txc_vq"
+        c = c % (dev, txc, vq)
         self.cmd(c)
 
     def perfiso_set_vq_weight(self, vq, weight):
-        c = "echo -n %s weight %s > /sys/module/perfiso/parameters/set_vq_weight" % (vq, weight)
+        dev = self.get_10g_dev()
+        c = "echo -n dev %s %s weight %s > /sys/module/perfiso/parameters/set_vq_weight" % (dev, vq, weight)
         self.cmd(c)
 
     def perfiso_set_txc_weight(self, vq, weight):
-        c = "echo -n %s weight %s > /sys/module/perfiso/parameters/set_txc_weight" % (vq, weight)
+        dev = self.get_10g_dev()
+        c = "echo -n dev %s %s weight %s > /sys/module/perfiso/parameters/set_txc_weight" % (dev, vq, weight)
         self.cmd(c)
 
     def rmmod(self, mod="perfiso"):
-        self.cmd("rmmod %s" % mod)
+        dev = self.get_10g_dev()
+        self.cmd("tc qdisc del dev %s root; rmmod %s" % (dev, mod))
 
     def get_10g_dev(self):
         id = int(self.addr.split('.')[-1])
@@ -416,7 +422,7 @@ class Host(object):
         cmd = "bwm-ng -t %s -o csv -u bits -T rate -C ',' > %s" % (interval_sec * 1000, path)
         return self.cmd_async(cmd)
 
-    def start_tenant_monitor(self, dir="/tmp", interval=1e8):
+    def start_tenant_monitor(self, dir="/tmp", interval=1e6):
         dir = os.path.abspath(dir)
         path = os.path.join(dir, "tenant.txt")
         cmd = "~/vimal/exports/pimonitor %s > %s" % (int(interval), path)
