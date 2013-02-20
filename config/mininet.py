@@ -3,7 +3,7 @@
 This is a sample configuration when running EyeQ on Mininet.
 """
 
-PI_MODULE = '/homr/ubuntu/eyeq/perfiso.ko'
+PI_MODULE = '/home/ubuntu/eyeq/perfiso.ko'
 IP_PREFIX = '10.0.0'
 IP_FMT = IP_PREFIX + ".%d"
 
