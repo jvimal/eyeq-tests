@@ -408,7 +408,7 @@ class Host(object):
         cmd = "(perf stat -e %s -a sleep %d) > %s 2>&1" % (events, time, path)
         return self.cmd_async(cmd)
 
-    def start_monitors(self, dir='/tmp', interval=1e8):
+    def start_monitors(self, dir='/tmp', interval=1e6):
         return [self.start_cpu_monitor(dir),
                 self.start_bw_monitor(dir),
                 self.start_tenant_monitor(dir, interval)]
