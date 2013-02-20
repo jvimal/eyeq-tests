@@ -6,6 +6,8 @@ This is a sample configuration when running EyeQ on Mininet.
 PI_MODULE = '/home/ubuntu/eyeq/perfiso.ko'
 IP_PREFIX = '10.0.0'
 IP_FMT = IP_PREFIX + ".%d"
+SSH_USERNAME = 'root'
+SSH_PASSWORD = 'root' # set to None if you have passwdless ssh.
 
 host_ips = map(lambda i: IP_FMT % i, range(1, 21))
 

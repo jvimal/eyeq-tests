@@ -47,7 +47,7 @@ class Host(object):
         if ssh is None or ssh._transport is None:
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh.connect(self.addr, username='root')
+            ssh.connect(self.addr, username=SSH_USERNAME, password=SSH_USERNAME)
             ssh.get_transport().set_keepalive(interval=5)
             Host._ssh_cache[self.addr] = ssh
         return ssh
