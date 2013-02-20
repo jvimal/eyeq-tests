@@ -5,47 +5,7 @@ import termcolor as T
 import os
 import socket
 from time import sleep
-
-PI_MODULE = '/root/vimal/10g/perfiso_10g_linux/perfiso.ko'
-PI_MODULE = '/root/vimal/10g/modules/perfiso.ko'
-PI_MODULE = '/root/vimal/exports/perfiso.ko'
-
-host_ips = map(lambda i: "10.0.1.%d" % i, range(1, 21))
-host_ips_exclude = ["10.0.1.9", "10.0.1.11", "10.0.1.12", "10.0.1.18"]
-for ip in host_ips_exclude:
-    host_ips.remove(ip)
-
-def pick_host_ip(i):
-    return host_ips[i]
-
-def pick_10g_ip(i):
-    return host_ips[i].replace("10.0.1", "192.168.2")
-
-def pick_1g_ip(i):
-    return host_ips[i].replace("10.0.1", "192.168.1")
-
-def pick_host_name(i):
-    return host_ips[i].replace("10.0.1.", "l")
-
-eth1 = 'eth1'
-
-PI_DEV = {
-    3: 'eth3',
-    6: 'eth4',
-    7: 'eth3',
-    10: 'eth6',
-    16: eth1,
-    17: eth1,
-
-    19: eth1,
-    20: eth1,
-    }
-
-PI_1G_DEV = {
-    1: eth1,
-    2: eth1,
-    4: eth1,
-    }
+from config.packard import *
 
 class HostList(object):
     def __init__(self, *lst):
@@ -200,14 +160,12 @@ class Host(object):
         dev = self.get_10g_dev()
         if not direct:
             dev = self.get_1g_dev()
-        params = "iso_param_dev=%s" % self.get_10g_dev()
         cmd = ''
         cmd += "mount -a; insmod %s %s; " % (mod, params)
         cmd += "tc qdisc add dev %s root handle 1: htb default 1; " % (self.get_10g_dev())
         if rmmod:
             cmd = ("tc qdisc del dev %s root; rmmod sch_htb; rmmod perfiso; " % dev) + cmd
         self.cmd(cmd)
-        self.insert_r2d2()
 
     def prepare_iface(self, iface=None, ip=None, direct=True):
         self.direct = direct
@@ -373,7 +331,6 @@ class Host(object):
             except:
                 pass
         self.cmd("killall -9 ssh iperf top bwm-ng memcached pimonitor netserver netperf %s" % extra)
-        self.rmmod("r2d2")
 
     def ipt_ebt_flush(self):
         self.cmd("iptables -F; ebtables -t broute -F")
