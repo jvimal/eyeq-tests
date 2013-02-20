@@ -9,6 +9,7 @@ PI_MODULE = '/root/vimal/10g/modules/perfiso.ko'
 PI_MODULE = '/root/vimal/exports/perfiso.ko'
 SSH_USERNAME = 'root'
 SSH_PASSWORD = None
+SSH_KEYFILE = None
 
 host_ips = map(lambda i: "10.0.1.%d" % i, range(1, 21))
 host_ips_exclude = ["10.0.1.9", "10.0.1.11", "10.0.1.12", "10.0.1.18"]

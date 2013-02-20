@@ -8,6 +8,7 @@ IP_PREFIX = '10.0.0'
 IP_FMT = IP_PREFIX + ".%d"
 SSH_USERNAME = 'root'
 SSH_PASSWORD = 'root' # set to None if you have passwdless ssh.
+SSH_KEYFILE = '/root/.ssh/id_rsa'
 
 host_ips = map(lambda i: IP_FMT % i, range(1, 21))
 
