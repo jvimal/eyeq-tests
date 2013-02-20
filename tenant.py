@@ -50,7 +50,7 @@ class Tenants(Expt):
         h.prepare_iface()
         for tid in xrange(self.opts("T")):
             h.create_ip_tenant(tid+1)
-        h.setup_tenant_routes()
+        h.setup_tenant_routes(self.opts("T"))
 
     def start(self):
         hlist = HostList()
