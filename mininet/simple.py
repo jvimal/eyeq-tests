@@ -24,6 +24,9 @@ parser.add_argument('--num-tenants',
                     type=int,
                     help="Number of tenants in every host",
                     default=3)
+parser.add_argument('--conf',
+                    action="store_true",
+                    default=False)
 args = parser.parse_args()
 
 lg.setLogLevel('info')
@@ -87,7 +90,8 @@ def main():
     net = Mininet(topo=topo)
     net.start()
     ssh_init(net)
-    eyeq_conf(net)
+    if args.conf:
+        eyeq_conf(net)
     set_switch_rates(net)
     CLI(net)
     net.stop()
