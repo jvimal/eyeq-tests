@@ -3,11 +3,11 @@
 from mininet.topo import Topo
 from mininet import node
 from mininet.net import Mininet
-from mininet.node import Bridge
 from mininet.cli import CLI
 from mininet.log import lg
 from mininet.link import TCLink
 
+from bridge import LinuxBridge
 from subprocess import Popen, PIPE
 from time import sleep, time
 import multiprocessing
@@ -106,7 +106,7 @@ def change_tbf():
 def main():
     topo = StarTopo(n=args.num_hosts)
     change_tbf()
-    net = Mininet(topo=topo, switch=Bridge)
+    net = Mininet(topo=topo, switch=LinuxBridge)
     net.start()
     ssh_init(net)
     if args.conf:
