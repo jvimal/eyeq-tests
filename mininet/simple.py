@@ -3,6 +3,7 @@
 from mininet.topo import Topo
 from mininet import node
 from mininet.net import Mininet
+from mininet.node import Bridge
 from mininet.cli import CLI
 from mininet.log import lg
 from mininet.link import TCLink
@@ -61,8 +62,11 @@ def ssh_init(net):
         cmd(host, "/usr/sbin/sshd", quiet=True)
     return
 
+def getdir():
+    return os.path.dirname(os.path.abspath(__file__)) + "/"
+
 def eyeq_conf(net):
-    dir = os.path.dirname(os.path.abspath(__file__)) + "/"
+    dir = getdir()
     basedir = dir + "../../"
     testdir = dir + "../"
 
@@ -76,18 +80,33 @@ def eyeq_conf(net):
 
 def set_switch_rates(net):
     lg.info("--- Adding rate limits to switches.\n")
+    BANDWIDTH="100Mbit"
+    BOTTLENECK_LINK="s0-eth1"
+    BOTTLENECK_BW="80Mbit"
     for sw in net.switches:
         for intf in sw.intfs.itervalues():
             dev = intf.name
             if dev == "lo":
                 continue
-            c = "tc qdisc add dev %s root handle 1: tbf limit 150000 burst 15000 rate 100Mbit" % dev
+            bw = BANDWIDTH
+            if dev == BOTTLENECK_LINK:
+                bw = BOTTLENECK_BW
+            c = "tc qdisc add dev %s root handle 1: tbf limit 150000 burst 15000 rate %s" % (dev, bw)
             rootcmd(c)
     return
 
+def change_tbf():
+    dir = getdir()
+    module = "%s/sch_tbf.ko" % dir
+    if not os.path.exists(module):
+        print "Please compile %s for ECN support."
+        sys.exit(-1)
+    rootcmd("rmmod sch_tbf; insmod %s;" % module)
+
 def main():
     topo = StarTopo(n=args.num_hosts)
-    net = Mininet(topo=topo)
+    change_tbf()
+    net = Mininet(topo=topo, switch=Bridge)
     net.start()
     ssh_init(net)
     if args.conf:
