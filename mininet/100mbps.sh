@@ -13,7 +13,7 @@ tools/pi.py --set 5,92
 # Set the tokenbucket timeout value to 1ms
 tools/pi.py --set 3,1000000
 
-# Set the rate metering interval to 1ms
+# Set the rate metering interval to 10ms
 tools/pi.py --set 13,10000
 
 # Trigger a recompute on every host

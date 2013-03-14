@@ -6,6 +6,7 @@ from mininet.net import Mininet
 from mininet.cli import CLI
 from mininet.log import lg
 from mininet.link import TCLink
+from mininet.util import dumpNodeConnections
 
 from bridge import LinuxBridge
 from subprocess import Popen, PIPE
@@ -56,6 +57,25 @@ class StarTopo(Topo):
             self.addLink(h, switch)
         return
 
+class Dumbell(Topo):
+    def __init__(self, n=3):
+        """@n is the number of hosts on each side of the dumbell
+        topo."""
+        Topo.__init__(self)
+        hosts = []
+        for i in xrange(2 * n):
+            name = 'h%d' % (i + 1)
+            host = self.addHost(name)
+            hosts.append(host)
+        switch0 = self.addSwitch('s0')
+        switch1 = self.addSwitch('s1')
+        L = len(hosts)
+        for h in hosts[0:L/2]:
+            self.addLink(h, switch0)
+        for h in hosts[L/2:]:
+            self.addLink(h, switch1)
+        self.addLink(switch0, switch1)
+
 def ssh_init(net):
     lg.info("--- Starting sshd inside all hosts\n")
     for host in net.hosts:
@@ -73,7 +93,7 @@ def eyeq_conf(net):
     lg.info("--- Please wait while we create+configure tenants through ssh.\n")
     lg.info("    This can take a while...\n")
     h1 = net.get("h1")
-    cmd(h1, "python %s/tenant.py -m %d -T %d" % (testdir, args.num_hosts, args.num_tenants))
+    cmd(h1, "python %s/tenant.py -m %d -T %d" % (testdir, args.num_hosts * 2, args.num_tenants))
 
     lg.info("\n--- Setting parameters for 100Mb/s\n")
     rootcmd("bash %s/100mbps.sh %s" % (dir, basedir))
@@ -81,7 +101,8 @@ def eyeq_conf(net):
 def set_switch_rates(net):
     lg.info("--- Adding rate limits to switches.\n")
     BANDWIDTH="100Mbit"
-    BOTTLENECK_LINK="s0-eth1"
+    BOTTLENECK_LINKS=["s0-eth1"] # This is for SimpleTopo
+    BOTTLENECK_LINKS=["s0-eth5", 's1-eth5'] # This is for Dumbell Topo
     BOTTLENECK_BW="80Mbit"
     for sw in net.switches:
         for intf in sw.intfs.itervalues():
@@ -89,7 +110,7 @@ def set_switch_rates(net):
             if dev == "lo":
                 continue
             bw = BANDWIDTH
-            if dev == BOTTLENECK_LINK:
+            if dev in BOTTLENECK_LINKS:
                 bw = BOTTLENECK_BW
             c = "tc qdisc add dev %s root handle 1: tbf limit 150000 burst 15000 rate %s" % (dev, bw)
             rootcmd(c)
@@ -104,10 +125,12 @@ def change_tbf():
     rootcmd("rmmod sch_tbf; insmod %s;" % module)
 
 def main():
-    topo = StarTopo(n=args.num_hosts)
+    #topo = StarTopo(n=args.num_hosts)
+    topo = Dumbell(n=args.num_hosts)
     change_tbf()
     net = Mininet(topo=topo, switch=LinuxBridge)
     net.start()
+    dumpNodeConnections(net.hosts)
     ssh_init(net)
     if args.conf:
         eyeq_conf(net)
@@ -117,4 +140,3 @@ def main():
     return
 
 main()
-
