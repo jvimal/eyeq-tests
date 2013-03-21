@@ -36,6 +36,16 @@ parser.add_argument('--reorder',
 parser.add_argument('--bw',
                     help="Link capacity",
                     default="100Mbit")
+parser.add_argument('--num-hosts',
+                    type=int,
+                    default=4)
+parser.add_argument('--num-tenants',
+                    type=int,
+                    help="Number of tenants in every host",
+                    default=3)
+parser.add_argument('--conf',
+                    action="store_true",
+                    default=False)
 
 args = parser.parse_args()
 
@@ -82,6 +92,7 @@ def setMac(node, intf, mac):
     node.cmd(cmd)
 
 def rateCmds(intf, rate):
+    return []
     return ["tc qdisc add dev %s root handle 1: htb default 1" % intf,
             "tc class add dev %s classid 1:1 parent 1: htb rate %s" % (intf, rate),
             "tc qdisc add dev %s handle 10: parent 1:1 pfifo limit 100" % (intf)
@@ -329,7 +340,7 @@ def setHostRate(host):
         host.cmd(cmd)
     return
 
-def configHostRoutes(net):
+def configHostRoutes(net, topo):
     for id, host in enumerate(net.hosts):
         name = host.name
         leaf_id = 1 + id / topo.hosts_per_leaf
@@ -369,6 +380,7 @@ def ssh_init(net):
     lg.info("--- Starting sshd inside all hosts\n")
     for host in net.hosts:
         cmd(host, "/usr/sbin/sshd", quiet=True)
+        #p = host.popen("/usr/sbin/sshd")
     return
 
 def set_switch_rates(net):
@@ -379,7 +391,7 @@ def set_switch_rates(net):
     BOTTLENECK_LINKS=[]
     BOTTLENECK_BW="80Mbit"
     for sw in net.hosts:
-        if not (sw.startswith('l') or sw.startswith('s')):
+        if not (sw.name.startswith('l') or sw.name.startswith('s')):
             continue
         for intf in sw.intfs.itervalues():
             dev = intf.name
@@ -393,6 +405,7 @@ def set_switch_rates(net):
             rootcmd(c)
     return
 
+
 def main():
     init()
     topo = LeafSpine()
@@ -402,11 +415,12 @@ def main():
                   switch=Routed)
     net.start()
     ssh_init(net)
-    configHostRoutes(net)
+    configHostRoutes(net, topo)
     if args.conf:
         eyeq_conf(net)
     set_switch_rates(net)
     CLI(net)
+    rootcmd("pgrep -u root sshd | xargs kill -9")
     net.stop()
 
 if __name__ == "__main__":
