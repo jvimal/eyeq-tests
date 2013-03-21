@@ -136,25 +136,29 @@ class Host(object):
         dev = self.get_10g_dev()
         self.cmd("tc qdisc del dev %s root; rmmod %s" % (dev, mod))
 
+    def getID(self):
+        id = 1
+        try:
+            id = self.id
+        except:
+            id = self.addr.split('.')[-1]
+        return int(id)
+
     def get_10g_dev(self):
-        id = int(self.addr.split('.')[-1])
-        return PI_DEV.get(id, "eth2")
+        return PI_DEV.get(self.getID(), "eth2")
 
     def get_1g_dev(self):
-        id = int(self.addr.split('.')[-1])
-        return PI_1G_DEV.get(id, None)
+        return PI_1G_DEV.get(self.getID(), None)
 
     def get_10g_ip(self):
-        id = int(self.addr.split('.')[-1])
-        return "192.168.2.%d" % id
+        return "192.168.2.%d" % self.getID()
 
     def get_1g_ip(self):
-        id = int(self.addr.split('.')[-1])
-        return "192.168.1.%d" % id
+        return "192.168.1.%d" % self.getID()
 
     def get_tenant_ip(self, tid=1):
         assert(tid > 0 and tid < 255)
-        myindex = int(self.addr.split('.')[-1])
+        myindex = self.getID()
         return "11.0.%d.%d" % (tid, myindex)
 
     def insmod(self, mod=PI_MODULE, params="iso_param_dev=eth2", rmmod=True, direct=True):
@@ -198,7 +202,7 @@ class Host(object):
         # This ensures that the right source address is chosen for a tenant.
         # So far, this has been done explicitly by binds(), but I do not want
         # to try it with Hadoop!
-        myindex = int(self.addr.split('.')[-1])
+        myindex = self.getID()
         if self.direct:
             dev = self.get_10g_dev()
         else:
