@@ -57,6 +57,7 @@ class Tenants(Expt):
         for i in xrange(self.opts("m")):
             ip = pick_host_ip(i)
             h = Host(ip)
+            h.id = i + 1
             hlist.append(h)
             self.log(T.colored(ip, "green"))
         self.hlist = hlist
