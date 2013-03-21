@@ -82,6 +82,12 @@ def ssh_init(net):
         cmd(host, "/usr/sbin/sshd", quiet=True)
     return
 
+def mem_init(net):
+    lg.info("--- Starting memcached inside all hosts\n")
+    for host in net.hosts:
+        cmd(host, "/usr/bin/memcached -m 64 -p 11211 -u memcache -d")
+    return
+
 def getdir():
     return os.path.dirname(os.path.abspath(__file__)) + "/"
 
@@ -132,11 +138,15 @@ def main():
     net.start()
     dumpNodeConnections(net.hosts)
     ssh_init(net)
+    mem_init(net)
     if args.conf:
         eyeq_conf(net)
     set_switch_rates(net)
     CLI(net)
     net.stop()
+    rootcmd("pgrep -u memcache | xargs kill -9")
+    rootcmd("pgrep -u root sshd | xargs kill -9")
+    rootcmd("pgrep -u root screen | xargs kill -9")
     return
 
 main()
